@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContextType, User, RegisterData } from '../types';
-import { authService } from '../services/AuthService';
+import supabase from '../lib/supabase';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -15,13 +15,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     checkAuthState();
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const profileUser = await loadCurrentUser();
+        setUser(profileUser);
+      } else {
+        setUser(null);
+      }
+    });
+    return () => {
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const checkAuthState = async () => {
     try {
-      const userData = await AsyncStorage.getItem('user');
-      if (userData) {
-        setUser(JSON.parse(userData));
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        const profileUser = await loadCurrentUser();
+        setUser(profileUser);
+      } else {
+        setUser(null);
       }
     } catch (error) {
       console.error('Error checking auth state:', error);
@@ -30,12 +44,67 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const loadCurrentUser = async (): Promise<User | null> => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const authUser = sessionData.session?.user;
+    if (!authUser) return null;
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('id, email, name, user_type, created_at')
+      .eq('id', authUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error loading profile:', error);
+      return null;
+    }
+
+    if (!profile) {
+      return {
+        id: authUser.id,
+        email: authUser.email || '',
+        name: '',
+        userType: 'patient',
+        createdAt: authUser.created_at || new Date().toISOString(),
+      } as User;
+    }
+
+    // Backfill name from auth metadata if missing
+    let name = profile.name || '';
+    if (!name) {
+      const metaName = (authUser.user_metadata as any)?.name || (authUser.user_metadata as any)?.full_name;
+      if (metaName) {
+        const { error: upErr } = await supabase
+          .from('profiles')
+          .update({ name: metaName, updated_at: new Date().toISOString() })
+          .eq('id', authUser.id);
+        if (!upErr) {
+          name = metaName;
+        }
+      }
+    }
+
+    const user: User = {
+      id: profile.id,
+      email: profile.email || authUser.email || '',
+      name,
+      userType: (profile.user_type as User['userType']) || 'patient',
+      createdAt: profile.created_at || authUser.created_at || new Date().toISOString(),
+    };
+    return user;
+  };
+
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const userData = await authService.login(email, password);
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      const profileUser = await loadCurrentUser();
+      if (profileUser) {
+        await AsyncStorage.setItem('user', JSON.stringify(profileUser));
+        setUser(profileUser);
+      }
     } catch (error) {
       throw error;
     } finally {
@@ -46,9 +115,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (userData: RegisterData) => {
     try {
       setIsLoading(true);
-      const newUser = await authService.register(userData);
-      await AsyncStorage.setItem('user', JSON.stringify(newUser));
-      setUser(newUser);
+      const { email, password, name, userType } = userData;
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: 'dietcats://auth/callback',
+          data: { name, user_type: userType },
+        },
+      });
+      if (error) throw error;
+
+      // If email confirmation is disabled, a session exists and profile is created via trigger.
+      if (data.session) {
+        const profileUser = await loadCurrentUser();
+        if (profileUser) {
+          await AsyncStorage.setItem('user', JSON.stringify(profileUser));
+          setUser(profileUser);
+        }
+      }
     } catch (error) {
       throw error;
     } finally {
@@ -58,6 +144,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = async () => {
     try {
+      await supabase.auth.signOut();
       await AsyncStorage.removeItem('user');
       setUser(null);
     } catch (error) {
@@ -70,6 +157,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     login,
     register,
+    loginWithGoogle: async () => {
+      try {
+        setIsLoading(true);
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: 'dietcats://auth/callback',
+            scopes: 'email profile',
+          },
+        });
+        if (error) throw error;
+        // After redirect back, onAuthStateChange will handle session/user
+      } catch (error) {
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
     logout,
   };
 
