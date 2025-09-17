@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContextType, User, RegisterData } from '../types';
 import supabase from '../lib/supabase';
+import { Platform } from 'react-native';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -14,7 +15,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    checkAuthState();
+    // On web, ensure we exchange any OAuth code in URL into a session (robust fallback)
+    const maybeExchange = async () => {
+      try {
+        if (Platform.OS === 'web') {
+          await supabase.auth.exchangeCodeForSession(window.location.href);
+        }
+      } catch {}
+    };
+
+    maybeExchange().finally(() => {
+      checkAuthState();
+    });
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         const profileUser = await loadCurrentUser();
@@ -117,11 +129,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(true);
       const { email, password, name, userType } = userData;
 
+      const redirectTo = typeof window !== 'undefined' && (window as any).location
+        ? (window as any).location.origin
+        : 'dietcats://auth/callback';
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: 'dietcats://auth/callback',
+          emailRedirectTo: redirectTo,
           data: { name, user_type: userType },
         },
       });
@@ -157,24 +173,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     login,
     register,
-    loginWithGoogle: async () => {
-      try {
-        setIsLoading(true);
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: 'dietcats://auth/callback',
-            scopes: 'email profile',
-          },
-        });
-        if (error) throw error;
-        // After redirect back, onAuthStateChange will handle session/user
-      } catch (error) {
-        throw error;
-      } finally {
-        setIsLoading(false);
-      }
-    },
     logout,
   };
 

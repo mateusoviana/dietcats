@@ -14,11 +14,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import { UserType } from '../../types';
-import GoogleButton from '../../components/GoogleButton';
 
 export default function RegisterScreen() {
   const navigation = useNavigation();
-  const { register, loginWithGoogle } = useAuth();
+  const { register } = useAuth();
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -83,16 +82,7 @@ export default function RegisterScreen() {
     setUserType(userType === 'patient' ? 'nutritionist' : 'patient');
   };
 
-  const handleLoginWithGoogle = async () => {
-    setLoading(true);
-    try {
-      await (loginWithGoogle ? loginWithGoogle() : Promise.resolve());
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível iniciar o login com Google');
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   return (
     <KeyboardAvoidingView 
@@ -172,8 +162,7 @@ export default function RegisterScreen() {
             loading={loading}
             style={styles.registerButton}
           />
-
-          <GoogleButton onPress={handleLoginWithGoogle} loading={loading} style={styles.googleButton} />
+          
 
           <View style={styles.loginContainer}>
             <Text style={styles.loginText}>Já tem uma conta? </Text>
@@ -248,9 +237,7 @@ const styles = StyleSheet.create({
   registerButton: {
     marginTop: 24,
   },
-  googleButton: {
-    marginTop: 12,
-  },
+  
   loginContainer: {
     flexDirection: 'row',
     alignItems: 'center',

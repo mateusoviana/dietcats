@@ -2,6 +2,7 @@ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 // Read Supabase credentials from Expo extra
 const extra = (Constants.expoConfig || (Constants as any).manifest)?.extra || {};
@@ -17,11 +18,12 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 
 export const supabase = createClient(SUPABASE_URL || '', SUPABASE_ANON_KEY || '', {
   auth: {
-    storage: AsyncStorage,
+    // Use AsyncStorage only on native; on web, let supabase use localStorage
+    storage: Platform.OS === 'web' ? undefined : AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
-    flowType: 'pkce',
+    detectSessionInUrl: Platform.OS === 'web',
+    flowType: Platform.OS === 'web' ? 'implicit' : 'pkce',
   },
 });
 

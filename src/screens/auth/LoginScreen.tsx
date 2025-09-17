@@ -13,11 +13,10 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
-import GoogleButton from '../../components/GoogleButton';
 
 export default function LoginScreen() {
   const navigation = useNavigation();
-  const { login, loginWithGoogle } = useAuth();
+  const { login } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -60,16 +59,7 @@ export default function LoginScreen() {
     navigation.navigate('Register' as never);
   };
 
-  const handleLoginWithGoogle = async () => {
-    setLoading(true);
-    try {
-      await (loginWithGoogle ? loginWithGoogle() : Promise.resolve());
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível iniciar o login com Google');
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   return (
     <KeyboardAvoidingView 
@@ -87,12 +77,6 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.form}>
-          <View style={styles.infoBox}>
-            <Text style={styles.infoText}>
-              Dica: o retorno automático do Google só funciona em builds Dev Client/standalone.
-              No Expo Go, após autenticar no Google, volte ao app manualmente.
-            </Text>
-          </View>
 
           <Input
             label="Email"
@@ -121,7 +105,6 @@ export default function LoginScreen() {
             style={styles.loginButton}
           />
 
-          <GoogleButton onPress={handleLoginWithGoogle} loading={loading} style={styles.googleButton} />
 
           <View style={styles.registerContainer}>
             <Text style={styles.registerText}>Não tem uma conta? </Text>
@@ -173,25 +156,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  infoBox: {
-    backgroundColor: '#FFF8E1',
-    borderColor: '#FFECB3',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  infoText: {
-    color: '#6D4C41',
-    fontSize: 12,
-    lineHeight: 16,
-  },
   loginButton: {
     marginTop: 24,
   },
-  googleButton: {
-    marginTop: 12,
-  },
+  
   registerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
