@@ -6,58 +6,111 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  Modal,
+  Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Card from '../../components/Card';
+import Button from '../../components/Button';
 import { useAuth } from '../../contexts/AuthContext';
-
-interface MealCheckIn {
-  id: string;
-  mealType: string;
-  timestamp: string;
-  hungerRating: number;
-  satietyRating: number;
-  satisfactionRating: number;
-  tag?: string;
-  observations?: string;
-}
+import { MealCheckIn } from '../../types';
+import { mealService } from '../../services/MealService';
+import Input from '../../components/Input';
+import RatingSelector from '../../components/RatingSelector';
 
 export default function HistoryScreen() {
   const { user } = useAuth();
   const [checkIns, setCheckIns] = useState<MealCheckIn[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month'>('today');
-
-  // Dados mockados para demonstração
-  const mockCheckIns: MealCheckIn[] = [
-    {
-      id: '1',
-      mealType: 'Café da Manhã',
-      timestamp: new Date().toISOString(),
-      hungerRating: 4,
-      satietyRating: 4,
-      satisfactionRating: 5,
-      tag: 'saudável',
-      observations: 'Aveia com frutas e leite',
-    },
-    {
-      id: '2',
-      mealType: 'Almoço',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      hungerRating: 2,
-      satietyRating: 5,
-      satisfactionRating: 4,
-      tag: 'vegetariano',
-      observations: 'Salada completa com quinoa',
-    },
-  ];
+  const [editing, setEditing] = useState<MealCheckIn | null>(null);
+  const [mealType, setMealType] = useState('');
+  const [hungerRating, setHungerRating] = useState(3);
+  const [satietyRating, setSatietyRating] = useState(3);
+  const [satisfactionRating, setSatisfactionRating] = useState(3);
+  const [tag, setTag] = useState('');
+  const [observations, setObservations] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadCheckIns();
   }, [selectedPeriod]);
 
   const loadCheckIns = async () => {
-    setCheckIns(mockCheckIns);
+    try {
+      const data = await mealService.getMyCheckIns();
+      // For now, ignore period filter client-side (could be filtered by date)
+      setCheckIns(data);
+    } catch (e) {
+      setCheckIns([]);
+    }
+  };
+
+  const openEdit = (item: MealCheckIn) => {
+    setEditing(item);
+    setMealType(item.mealType);
+    setHungerRating(item.hungerRating || 0);
+    setSatietyRating(item.satietyRating || 0);
+    setSatisfactionRating(item.satisfactionRating || 0);
+    setTag(item.tag || '');
+    setObservations(item.observations || '');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editing) return;
+    setSaving(true);
+    try {
+      await mealService.updateCheckIn(editing.id, {
+        mealType: mealType.trim(),
+        hungerRating,
+        satietyRating,
+        satisfactionRating,
+        tag: tag.trim() || undefined,
+        observations: observations.trim() || undefined,
+      });
+      setEditing(null);
+      await loadCheckIns();
+    } catch (e) {
+      Alert.alert('Erro', 'Não foi possível salvar as alterações.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = (item: MealCheckIn) => {
+    if (Platform.OS === 'web') {
+      const ok = (globalThis as any)?.confirm?.('Deseja excluir este check-in?');
+      if (!ok) return;
+      (async () => {
+        try {
+          await mealService.deleteCheckIn(item.id);
+          await loadCheckIns();
+        } catch (e) {
+          (globalThis as any)?.alert?.('Erro ao excluir.');
+        }
+      })();
+      return;
+    }
+    Alert.alert(
+      'Excluir check-in',
+      'Deseja excluir este check-in?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await mealService.deleteCheckIn(item.id);
+              await loadCheckIns();
+            } catch (e) {
+              Alert.alert('Erro', 'Não foi possível excluir.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const onRefresh = React.useCallback(() => {
@@ -151,6 +204,25 @@ export default function HistoryScreen() {
           <Text style={styles.observationsText}>{checkIn.observations}</Text>
         </View>
       )}
+
+      <View style={styles.actionsRow}>
+        <TouchableOpacity
+          onPress={() => openEdit(checkIn)}
+          style={styles.actionIcon}
+          accessibilityLabel="Editar check-in"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="create-outline" size={20} color="#666" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => handleDelete(checkIn)}
+          style={styles.actionIcon}
+          accessibilityLabel="Excluir check-in"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="trash-outline" size={20} color="#E53935" />
+        </TouchableOpacity>
+      </View>
     </Card>
   );
 
@@ -202,6 +274,25 @@ export default function HistoryScreen() {
           checkIns.map(renderCheckIn)
         )}
       </ScrollView>
+      <Modal visible={!!editing} transparent animationType="slide" onRequestClose={() => setEditing(null)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalScrollContent} keyboardShouldPersistTaps="handled">
+              <Text style={styles.modalTitle}>Editar Check-in</Text>
+              <Input label="Tipo de Refeição" value={mealType} onChangeText={setMealType} />
+              <RatingSelector label="Fome" value={hungerRating} onValueChange={setHungerRating} />
+              <RatingSelector label="Saciedade" value={satietyRating} onValueChange={setSatietyRating} />
+              <RatingSelector label="Satisfação" value={satisfactionRating} onValueChange={setSatisfactionRating} />
+              <Input label="Tag" value={tag} onChangeText={setTag} />
+              <Input label="Observações" value={observations} onChangeText={setObservations} multiline numberOfLines={3} />
+              <View style={styles.modalActions}>
+                <Button title="Cancelar" variant="outline" onPress={() => setEditing(null)} style={styles.modalBtn} />
+                <Button title="Salvar" onPress={handleSaveEdit} loading={saving} style={styles.modalBtn} />
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -342,5 +433,51 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 12,
+  },
+  actionIcon: {
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    marginLeft: 8,
+    borderRadius: 6,
+    backgroundColor: 'transparent',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    width: '100%',
+    maxWidth: 520,
+    maxHeight: '85%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  modalScroll: {
+    width: '100%',
+  },
+  modalScrollContent: {
+    paddingBottom: 8,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 12,
+  },
+  modalBtn: {
+    marginLeft: 8,
   },
 });

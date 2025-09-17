@@ -30,13 +30,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         backgroundColor: '#4CAF50',
       },
       package: 'com.dietcats.app',
+      versionCode: 1,
     },
     web: {
       favicon: './assets/images/favicon.png',
     },
     plugins: [
       'expo-image-picker',
-      ['expo-notifications', { color: '#ffffff' }],
     ],
     extra: {
       SUPABASE_URL,
@@ -44,4 +44,3 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
   };
 };
-

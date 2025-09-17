@@ -12,6 +12,10 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
+-- Optional: allow patients to self-join when enabled by owner
+alter table public.competitions
+  add column if not exists allow_self_join boolean not null default false;
+
 alter table public.profiles enable row level security;
 
 -- Policies: a user can manage only their own profile
@@ -109,6 +113,19 @@ drop policy if exists "meal_crud_own" on public.meal_check_ins;
 create policy "meal_crud_own" on public.meal_check_ins
   for all using ( patient_id = auth.uid() ) with check ( patient_id = auth.uid() );
 
+-- Allow nutritionists to view check-ins of patients who are in their competitions
+drop policy if exists "meal_select_owner_competitions" on public.meal_check_ins;
+create policy "meal_select_owner_competitions" on public.meal_check_ins
+  for select using (
+    exists (
+      select 1
+      from public.competition_participants cp
+      join public.competitions c on c.id = cp.competition_id
+      where cp.patient_id = meal_check_ins.patient_id
+        and c.nutritionist_id = auth.uid()
+    )
+  );
+
 -- Competitions owned by a nutritionist
 create table if not exists public.competitions (
   id uuid primary key default gen_random_uuid(),
@@ -153,6 +170,25 @@ create policy "participants_owner_crud" on public.competition_participants
       select 1 from public.competitions c
       where c.id = competition_participants.competition_id and c.nutritionist_id = auth.uid()
     )
+  );
+
+-- Allow patient self-join when the competition enables it
+drop policy if exists "participants_self_insert" on public.competition_participants;
+create policy "participants_self_insert" on public.competition_participants
+  for insert with check (
+    patient_id = auth.uid()
+    and exists (
+      select 1 from public.competitions c
+      where c.id = competition_participants.competition_id
+        and c.allow_self_join = true
+    )
+  );
+
+-- Allow patient to leave competitions they are in
+drop policy if exists "participants_self_delete" on public.competition_participants;
+create policy "participants_self_delete" on public.competition_participants
+  for delete using (
+    patient_id = auth.uid()
   );
 
 alter table public.competitions enable row level security;

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
+import { accountService } from '../../services/AccountService';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
@@ -33,6 +34,29 @@ export default function ProfileScreen() {
       [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Sair', style: 'destructive', onPress: logout },
+      ]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Excluir conta',
+      'Essa ação é permanente e excluirá seus dados. Deseja continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await accountService.deleteAccount();
+              Alert.alert('Conta excluída', 'Sua conta foi excluída com sucesso.');
+              await logout();
+            } catch (e) {
+              Alert.alert('Erro', 'Não foi possível excluir a conta.');
+            }
+          },
+        },
       ]
     );
   };
@@ -196,6 +220,12 @@ export default function ProfileScreen() {
           variant="outline"
           style={styles.logoutButton}
         />
+        <Button
+          title="Excluir conta"
+          onPress={handleDeleteAccount}
+          variant="outline"
+          style={styles.deleteButton}
+        />
       </View>
     </ScrollView>
   );
@@ -355,6 +385,10 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     borderColor: '#F44336',
+    marginBottom: 12,
+  },
+  deleteButton: {
+    borderColor: '#E53935',
     marginBottom: 32,
   },
 });

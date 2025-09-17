@@ -7,6 +7,13 @@
     "icon": "./assets/images/dietcats_icon.png",
     "userInterfaceStyle": "light",
     "scheme": "dietcats",
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/dietcats_icon.png",
+        "backgroundColor": "#4CAF50"
+      },
+      "package": "com.dietcats.app"
+    },
     "splash": {
       "image": "./assets/images/dietcats.png",
       "resizeMode": "cover",
@@ -19,19 +26,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.dietcats.app"
     },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/dietcats_icon.png",
-        "backgroundColor": "#4CAF50"
-      },
-      "package": "com.dietcats.app"
-    },
     "web": {
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-image-picker",
-      ["expo-notifications", { "color": "#ffffff" }]
+      "expo-image-picker"
     ]
   }
 }

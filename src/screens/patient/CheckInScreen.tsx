@@ -12,6 +12,7 @@ import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import RatingSelector from '../../components/RatingSelector';
+import { mealService } from '../../services/MealService';
 
 export default function CheckInScreen() {
   const [mealType, setMealType] = useState('');
@@ -39,27 +40,22 @@ export default function CheckInScreen() {
 
     setLoading(true);
     try {
-      // Simular salvamento
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      Alert.alert(
-        'Sucesso!',
-        'Check-in registrado com sucesso!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Reset form
-              setMealType('');
-              setHungerRating(3);
-              setSatietyRating(3);
-              setSatisfactionRating(3);
-              setTag('');
-              setObservations('');
-            },
-          },
-        ]
-      );
+      await mealService.addCheckIn({
+        mealType: mealType.trim(),
+        hungerRating,
+        satietyRating,
+        satisfactionRating,
+        tag: tag.trim() || undefined,
+        observations: observations.trim() || undefined,
+      });
+      Alert.alert('Sucesso!', 'Check-in registrado com sucesso!');
+      // Reset form
+      setMealType('');
+      setHungerRating(3);
+      setSatietyRating(3);
+      setSatisfactionRating(3);
+      setTag('');
+      setObservations('');
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar o check-in');
     } finally {

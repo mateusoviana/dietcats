@@ -10,62 +10,24 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-
-interface Competition {
-  id: string;
-  name: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  participants: number;
-  isActive: boolean;
-  totalPoints: number;
-}
+import { competitionService } from '../../services/CompetitionService';
+import { Competition } from '../../types';
 
 export default function CompetitionsScreen() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-
-  // Dados mockados para demonstração
-  const mockCompetitions: Competition[] = [
-    {
-      id: '1',
-      name: 'Desafio da Semana Saudável',
-      description: 'Registre todas as suas refeições esta semana e ganhe pontos extras!',
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      participants: 12,
-      isActive: true,
-      totalPoints: 450,
-    },
-    {
-      id: '2',
-      name: 'Mês do Bem-Estar',
-      description: 'Uma competição de um mês para melhorar seus hábitos alimentares.',
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      endDate: new Date(Date.now() + 23 * 24 * 60 * 60 * 1000).toISOString(),
-      participants: 25,
-      isActive: true,
-      totalPoints: 1200,
-    },
-    {
-      id: '3',
-      name: 'Desafio de Verão',
-      description: 'Competição focada em refeições leves e hidratação.',
-      startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      endDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      participants: 18,
-      isActive: false,
-      totalPoints: 890,
-    },
-  ];
 
   useEffect(() => {
     loadCompetitions();
   }, []);
 
   const loadCompetitions = async () => {
-    setCompetitions(mockCompetitions);
+    try {
+      const data = await competitionService.listOwned();
+      setCompetitions(data);
+    } catch (e) {
+      setCompetitions([]);
+    }
   };
 
   const onRefresh = React.useCallback(() => {
@@ -112,11 +74,7 @@ export default function CompetitionsScreen() {
       <View style={styles.competitionStats}>
         <View style={styles.statItem}>
           <Ionicons name="people-outline" size={16} color="#666" />
-          <Text style={styles.statText}>{competition.participants} participantes</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Ionicons name="trophy-outline" size={16} color="#666" />
-          <Text style={styles.statText}>{competition.totalPoints} pontos totais</Text>
+          <Text style={styles.statText}>{competition.participants.length} participantes</Text>
         </View>
         {competition.isActive && (
           <View style={styles.statItem}>
@@ -152,9 +110,8 @@ export default function CompetitionsScreen() {
     </Card>
   );
 
-  const activeCompetitions = competitions.filter(c => c.isActive);
-  const totalParticipants = competitions.reduce((sum, c) => sum + c.participants, 0);
-  const totalPoints = competitions.reduce((sum, c) => sum + c.totalPoints, 0);
+  const activeCompetitions = competitions.filter(c => new Date(c.endDate) > new Date());
+  const totalParticipants = competitions.reduce((sum, c) => sum + c.participants.length, 0);
 
   return (
     <View style={styles.container}>
@@ -189,14 +146,8 @@ export default function CompetitionsScreen() {
           <Text style={styles.summaryTitle}>Resumo Geral</Text>
           <View style={styles.summaryStats}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryNumber}>{totalPoints}</Text>
-              <Text style={styles.summaryLabel}>Pontos Distribuídos</Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryNumber}>
-                {Math.round(totalPoints / Math.max(totalParticipants, 1))}
-              </Text>
-              <Text style={styles.summaryLabel}>Média por Participante</Text>
+              <Text style={styles.summaryNumber}>{totalParticipants}</Text>
+              <Text style={styles.summaryLabel}>Total de Participantes</Text>
             </View>
           </View>
         </Card>

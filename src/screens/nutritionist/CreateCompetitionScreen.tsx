@@ -11,6 +11,7 @@ import {
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
+import { competitionService } from '../../services/CompetitionService';
 
 export default function CreateCompetitionScreen() {
   const [name, setName] = useState('');
@@ -64,21 +65,30 @@ export default function CreateCompetitionScreen() {
 
     setLoading(true);
     try {
-      // Simular criação da competição
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      Alert.alert(
-        'Sucesso!',
-        'Competição criada com sucesso!',
-        [{ text: 'OK', onPress: () => {
-          // Reset form
-          setName('');
-          setDescription('');
-          setStartDate('');
-          setEndDate('');
-          setSelectedPatients([]);
-        }}]
-      );
+      const comp = await competitionService.createCompetition({
+        name: name.trim(),
+        description: description.trim(),
+        startDate,
+        endDate,
+      });
+      // Tentar adicionar participantes (IDs devem existir no Supabase)
+      for (const pid of selectedPatients) {
+        try {
+          await competitionService.addParticipant(comp.id, pid);
+        } catch {}
+      }
+      Alert.alert('Sucesso!', 'Competição criada com sucesso!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            setName('');
+            setDescription('');
+            setStartDate('');
+            setEndDate('');
+            setSelectedPatients([]);
+          },
+        },
+      ]);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível criar a competição');
     } finally {

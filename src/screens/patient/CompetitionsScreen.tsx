@@ -10,55 +10,24 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-
-interface Competition {
-  id: string;
-  name: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  participants: number;
-  userPosition: number;
-  userPoints: number;
-  isActive: boolean;
-}
+import { competitionService } from '../../services/CompetitionService';
+import { Competition } from '../../types';
 
 export default function CompetitionsScreen() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-
-  // Dados mockados para demonstração
-  const mockCompetitions: Competition[] = [
-    {
-      id: '1',
-      name: 'Desafio da Semana Saudável',
-      description: 'Registre todas as suas refeições esta semana e ganhe pontos extras!',
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      participants: 12,
-      userPosition: 3,
-      userPoints: 45,
-      isActive: true,
-    },
-    {
-      id: '2',
-      name: 'Mês do Bem-Estar',
-      description: 'Uma competição de um mês para melhorar seus hábitos alimentares.',
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      endDate: new Date(Date.now() + 23 * 24 * 60 * 60 * 1000).toISOString(),
-      participants: 25,
-      userPosition: 7,
-      userPoints: 120,
-      isActive: true,
-    },
-  ];
 
   useEffect(() => {
     loadCompetitions();
   }, []);
 
   const loadCompetitions = async () => {
-    setCompetitions(mockCompetitions);
+    try {
+      const data = await competitionService.listVisible();
+      setCompetitions(data);
+    } catch (e) {
+      setCompetitions([]);
+    }
   };
 
   const onRefresh = React.useCallback(() => {
@@ -97,7 +66,7 @@ export default function CompetitionsScreen() {
       <View style={styles.competitionHeader}>
         <View style={styles.competitionTitleContainer}>
           <Text style={styles.competitionName}>{competition.name}</Text>
-          {competition.isActive && (
+          {new Date(competition.endDate) > new Date() && (
             <View style={styles.activeBadge}>
               <Text style={styles.activeBadgeText}>ATIVA</Text>
             </View>
@@ -109,7 +78,7 @@ export default function CompetitionsScreen() {
       <View style={styles.competitionStats}>
         <View style={styles.statItem}>
           <Ionicons name="people-outline" size={16} color="#666" />
-          <Text style={styles.statText}>{competition.participants} participantes</Text>
+          <Text style={styles.statText}>{competition.participants.length} participantes</Text>
         </View>
         <View style={styles.statItem}>
           <Ionicons name="calendar-outline" size={16} color="#666" />
@@ -119,18 +88,7 @@ export default function CompetitionsScreen() {
         </View>
       </View>
 
-      <View style={styles.userStats}>
-        <View style={styles.userStatItem}>
-          <Text style={styles.userStatLabel}>Sua Posição</Text>
-          <Text style={styles.userStatValue}>
-            {getPositionIcon(competition.userPosition)}
-          </Text>
-        </View>
-        <View style={styles.userStatItem}>
-          <Text style={styles.userStatLabel}>Seus Pontos</Text>
-          <Text style={styles.userStatValue}>{competition.userPoints}</Text>
-        </View>
-      </View>
+      {/* Posição/pontos do usuário não implementados ainda */}
 
       <View style={styles.competitionFooter}>
         <Text style={styles.dateRange}>
@@ -180,13 +138,7 @@ export default function CompetitionsScreen() {
               <View style={styles.summaryStats}>
                 <View style={styles.summaryItem}>
                   <Text style={styles.summaryNumber}>{competitions.length}</Text>
-                  <Text style={styles.summaryLabel}>Competições Ativas</Text>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryNumber}>
-                    {competitions.reduce((sum, comp) => sum + comp.userPoints, 0)}
-                  </Text>
-                  <Text style={styles.summaryLabel}>Total de Pontos</Text>
+                  <Text style={styles.summaryLabel}>Competições Visíveis</Text>
                 </View>
               </View>
             </Card>
