@@ -7,6 +7,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
@@ -88,6 +89,11 @@ export default function RegisterScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
+          <Image 
+            source={require('../../../assets/images/dietcats.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.title}>Criar Conta</Text>
           <Text style={styles.subtitle}>Preencha os dados abaixo</Text>
         </View>
@@ -184,6 +190,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
     marginTop: 16,
+  },
+  logo: {
+    width: 160,
+    height: 80,
+    marginBottom: 16,
   },
   title: {
     fontSize: 28,

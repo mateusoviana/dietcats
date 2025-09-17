@@ -7,6 +7,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
@@ -65,7 +66,11 @@ export default function LoginScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>DietCats</Text>
+          <Image 
+            source={require('../../../assets/images/dietcats.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.subtitle}>Faça login para continuar</Text>
         </View>
 
@@ -133,11 +138,10 @@ const styles = StyleSheet.create({
     marginBottom: 48,
     marginTop: 32,
   },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-    marginBottom: 8,
+  logo: {
+    width: 180,
+    height: 100,
+    marginBottom: 16,
   },
   subtitle: {
     fontSize: 16,

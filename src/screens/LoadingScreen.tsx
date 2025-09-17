@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import Logo from '../components/Logo';
 
 export default function LoadingScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>DietCats</Text>
-      <ActivityIndicator size="large" color="#4CAF50" style={styles.loader} />
-      <Text style={styles.subtitle}>Carregando...</Text>
+  <Logo showText={false} style={styles.logo} />
+  <ActivityIndicator size="large" color="#FFFFFF" style={styles.loader} />
+  <Text style={styles.subtitle}>Carregando...</Text>
     </View>
   );
 }
@@ -16,19 +17,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#4CAF50',
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-    marginBottom: 32,
+  logo: {
+    marginBottom: 12,
+    width: '86%',
+    height: undefined,
+    aspectRatio: 1,
   },
   loader: {
     marginBottom: 16,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: '#FFFFFF',
+    marginTop: 8,
   },
 });
