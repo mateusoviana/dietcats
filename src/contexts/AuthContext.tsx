@@ -160,11 +160,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = async () => {
     try {
+      console.log('Logout iniciado');
+      setIsLoading(true);
+      
+      // Set user to null immediately to trigger navigation reset
+      setUser(null);
+      
+      // Then sign out from Supabase
       await supabase.auth.signOut();
       await AsyncStorage.removeItem('user');
-      setUser(null);
+      
+      console.log('Logout concluído');
+      
+      // Small delay to ensure state is updated before navigation resets
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
       console.error('Error logging out:', error);
+      // Ensure user is set to null even if there's an error
+      setUser(null);
+    } finally {
+      setIsLoading(false);
     }
   };
 

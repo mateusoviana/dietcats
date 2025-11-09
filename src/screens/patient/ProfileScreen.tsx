@@ -6,6 +6,7 @@ import {
   ScrollView,
   Alert,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
@@ -28,12 +29,45 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
+    console.log('handleLogout chamado');
+    
+    // On web, use window.confirm as fallback
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Tem certeza que deseja sair da sua conta?');
+      if (confirmed) {
+        console.log('Confirmando logout...');
+        logout().catch(error => {
+          console.error('Erro ao fazer logout:', error);
+        });
+      } else {
+        console.log('Logout cancelado');
+      }
+      return;
+    }
+    
+    // On native, use Alert
     Alert.alert(
       'Sair',
       'Tem certeza que deseja sair da sua conta?',
       [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Sair', style: 'destructive', onPress: logout },
+        { 
+          text: 'Cancelar', 
+          style: 'cancel',
+          onPress: () => console.log('Logout cancelado')
+        },
+        { 
+          text: 'Sair', 
+          style: 'destructive', 
+          onPress: async () => {
+            console.log('Confirmando logout...');
+            try {
+              await logout();
+              console.log('Logout executado com sucesso');
+            } catch (error) {
+              console.error('Erro ao fazer logout:', error);
+            }
+          }
+        },
       ]
     );
   };
@@ -216,7 +250,10 @@ export default function ProfileScreen() {
 
         <Button
           title="Sair da Conta"
-          onPress={handleLogout}
+          onPress={() => {
+            console.log('Botão Sair da Conta clicado');
+            handleLogout();
+          }}
           variant="outline"
           style={styles.logoutButton}
         />

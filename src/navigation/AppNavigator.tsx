@@ -17,8 +17,14 @@ export default function AppNavigator() {
     return <LoadingScreen />;
   }
 
+  // Use a key that changes when user changes to force re-render
+  const navigatorKey = user ? `authenticated-${user.userType}` : 'unauthenticated';
+
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator 
+      key={navigatorKey}
+      screenOptions={{ headerShown: false }}
+    >
       {!user ? (
         <Stack.Screen name="Auth" component={AuthNavigator} />
       ) : user.userType === 'patient' ? (
