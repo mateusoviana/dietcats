@@ -21,21 +21,36 @@ export default function ProfileScreen() {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [associationCode, setAssociationCode] = useState('');
-
-  // 2. Adicionar estado de loading para o botão "Salvar"
   const [isSaving, setIsSaving] = useState(false);
+  
+  // --- 1. Adicionar estado para os erros de validação ---
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+  // --- 2. Criar função de validação ---
+  const validateProfile = () => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!name.trim()) {
+      newErrors.name = 'Nome é obrigatório'; // <-- Sua mensagem!
+    }
+
+    if (!email.trim()) {
+      newErrors.email = 'Email é obrigatório';
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'O formato do email é inválido.';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // --- 3. Atualizar o handleSave ---
   const handleSave = async () => {
     if (isSaving) return;
 
-    // Validações simples
-    if (!name.trim()) {
-      Alert.alert('Erro', 'O nome não pode ficar em branco.');
-      return;
-    }
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      Alert.alert('Erro', 'O formato do email é inválido.');
-      return;
+    // Usar a nova função de validação
+    if (!validateProfile()) {
+      return; // Para a execução se a validação falhar
     }
     
     // Se nada mudou, apenas saia do modo de edição
@@ -46,25 +61,24 @@ export default function ProfileScreen() {
 
     setIsSaving(true);
     try {
-      // 4. Chamar a função do AuthContext
       await updateProfile({ name, email });
       
-      Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
+      Alert.alert('Sucesso', 'Perfil atualizado com sucesso!'); // Sucesso ainda usa Alert
       setIsEditing(false);
+      setErrors({}); // Limpa erros após o sucesso
     } catch (error) {
-      // 5. Tratar erros
       console.error('Erro ao salvar perfil:', error);
       Alert.alert('Erro', (error as Error).message || 'Não foi possível atualizar o perfil.');
     } finally {
       setIsSaving(false);
     }
   };
-
+  
   const handleCancelEdit = () => {
     setIsEditing(false);
-    // 6. Resetar os campos para os valores originais se o usuário cancelar
     setName(user?.name || '');
     setEmail(user?.email || '');
+    setErrors({}); // Limpar erros ao cancelar
   };
 
   const handleLogout = () => {
@@ -201,19 +215,28 @@ export default function ProfileScreen() {
           <View style={styles.profileInfo}>
             {isEditing ? (
               <>
+                {/* --- 4. Conectar os Inputs --- */}
                 <Input
                   label="Nome"
                   value={name}
-                  onChangeText={setName}
+                  onChangeText={(text) => {
+                    setName(text);
+                    if (errors.name) setErrors(prev => ({ ...prev, name: '' }));
+                  }}
                   placeholder="Digite seu nome"
+                  error={errors.name}
                 />
                 <Input
                   label="Email"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
+                  }}
                   placeholder="Digite seu email"
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  error={errors.email}
                 />
                 <View style={styles.editButtons}>
                   <Button
