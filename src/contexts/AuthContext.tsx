@@ -150,9 +150,49 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     } catch (error) {
       throw error;
-    } finally {
-    }
+    } 
   };
+
+    // --- NOVA FUNÇÃO ADICIONADA ---
+  const updateProfile = async (data: { name: string; email: string }) => {
+    if (!user) throw new Error("Usuário não está logado");
+
+    const { name, email } = data;
+    
+    // 1. Atualizar o email no Supabase Auth (se mudou)
+    // Isso (geralmente) envia um email de confirmação
+    if (email && email.toLowerCase() !== user.email.toLowerCase()) {
+      const { error: authError } = await supabase.auth.updateUser({ email });
+      if (authError) {
+        throw new Error(`Falha ao atualizar email: ${authError.message}`);
+      }
+      // Nota: O email no 'user' só será atualizado após a confirmação.
+      // Por agora, vamos atualizar o estado local
+    }
+
+    // 2. Atualizar o nome na tabela 'profiles' (se mudou)
+    if (name && name !== user.name) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ name: name, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
+      
+      if (profileError) {
+        throw new Error(`Falha ao atualizar nome: ${profileError.message}`);
+      }
+    }
+
+    // 3. Atualizar o estado local para reflexo imediato na UI
+    const updatedUser: User = {
+      ...user,
+      name: name || user.name,
+      email: email || user.email, // Atualiza localmente, mesmo que a confirmação esteja pendente
+    };
+    
+    setUser(updatedUser);
+    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+  // --- FIM DA NOVA FUNÇÃO ---
 
   const logout = async () => {
     try {
@@ -185,6 +225,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     register,
     logout,
+    updateProfile, 
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

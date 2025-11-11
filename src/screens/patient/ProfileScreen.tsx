@@ -16,16 +16,55 @@ import Button from '../../components/Button';
 import Input from '../../components/Input';
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+   const { user, logout, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [associationCode, setAssociationCode] = useState('');
 
-  const handleSave = () => {
-    // Aqui seria implementada a lógica de salvamento
-    Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
+  // 2. Adicionar estado de loading para o botão "Salvar"
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (isSaving) return;
+
+    // Validações simples
+    if (!name.trim()) {
+      Alert.alert('Erro', 'O nome não pode ficar em branco.');
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      Alert.alert('Erro', 'O formato do email é inválido.');
+      return;
+    }
+    
+    // Se nada mudou, apenas saia do modo de edição
+    if (name === user?.name && email === user?.email) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // 4. Chamar a função do AuthContext
+      await updateProfile({ name, email });
+      
+      Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
+      setIsEditing(false);
+    } catch (error) {
+      // 5. Tratar erros
+      console.error('Erro ao salvar perfil:', error);
+      Alert.alert('Erro', (error as Error).message || 'Não foi possível atualizar o perfil.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
     setIsEditing(false);
+    // 6. Resetar os campos para os valores originais se o usuário cancelar
+    setName(user?.name || '');
+    setEmail(user?.email || '');
   };
 
   const handleLogout = () => {
