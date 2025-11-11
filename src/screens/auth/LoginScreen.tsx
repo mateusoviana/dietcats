@@ -22,6 +22,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [loginError, setLoginError] = useState('');
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -44,12 +45,14 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!validateForm()) return;
-
+    setLoginError(''); // <-- LIMPA ERROS ANTERIORES
     setLoading(true);
+  
     try {
       await login(email.trim(), password);
     } catch (error) {
-      Alert.alert('Erro', 'Email ou senha incorretos');
+      // ESTA É A MUDANÇA PRINCIPAL:
+      setLoginError('Email ou senha incorretos. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -81,7 +84,11 @@ export default function LoginScreen() {
           <Input
             label="Email"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              setLoginError('');
+              if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
+            }}
             placeholder="Digite seu email"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -92,11 +99,20 @@ export default function LoginScreen() {
           <Input
             label="Senha"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(text) => {
+              setPassword(text);
+              setLoginError('');
+              if (errors.password) setErrors(prev => ({ ...prev, password: '' }));
+            }}
             placeholder="Digite sua senha"
             secureTextEntry
             error={errors.password}
           />
+
+          {/* <-- PASSO 4: Exibir a mensagem de erro aqui */}
+          {loginError ? (
+            <Text style={styles.formErrorText}>{loginError}</Text>
+          ) : null}
 
           <Button
             title="Entrar"
@@ -193,5 +209,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#2E7D32',
     marginBottom: 4,
+  },
+  formErrorText: {
+    fontSize: 14,
+    color: '#D32F2F', // Um vermelho escuro para erros
+    textAlign: 'center',
+    marginBottom: 16,
+    marginTop: 8,
   },
 });

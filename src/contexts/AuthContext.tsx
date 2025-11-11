@@ -109,7 +109,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (email: string, password: string) => {
     try {
-      setIsLoading(true);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       const profileUser = await loadCurrentUser();
@@ -120,13 +119,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       throw error;
     } finally {
-      setIsLoading(false);
     }
   };
 
   const register = async (userData: RegisterData) => {
     try {
-      setIsLoading(true);
       const { email, password, name, userType } = userData;
 
       const redirectTo = typeof window !== 'undefined' && (window as any).location
@@ -154,7 +151,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       throw error;
     } finally {
-      setIsLoading(false);
     }
   };
 
