@@ -8,6 +8,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
@@ -16,9 +18,15 @@ import HungerSlider from '../../components/HungerSlider';
 import CatSatisfactionSlider from '../../components/CatSatisfactionSlider';
 import TagSelector from '../../components/TagSelector';
 import PhotoSelector from '../../components/PhotoSelector';
+import RequiredFieldModal from '../../components/RequiredFieldModal';
+import SuccessModal from '../../components/SuccessModal';
+import { PatientTabParamList } from '../../types';
 import { mealService } from '../../services/MealService';
 
+type CheckInScreenNavigationProp = BottomTabNavigationProp<PatientTabParamList, 'CheckIn'>;
+
 export default function CheckInScreen() {
+  const navigation = useNavigation<CheckInScreenNavigationProp>();
   const [mealType, setMealType] = useState('');
   const [hungerRating, setHungerRating] = useState(3);
   const [satisfactionRating, setSatisfactionRating] = useState(3);
@@ -26,10 +34,34 @@ export default function CheckInScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [observations, setObservations] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showRequiredModal, setShowRequiredModal] = useState(false);
+  const [requiredField, setRequiredField] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const resetForm = () => {
+    setMealType('');
+    setHungerRating(3);
+    setSatisfactionRating(3);
+    setTags([]);
+    setPhotoUri(null);
+    setObservations('');
+  };
+
+  const handleRegisterAnother = () => {
+    setShowSuccessModal(false);
+    resetForm();
+  };
+
+  const handleGoHome = () => {
+    setShowSuccessModal(false);
+    navigation.navigate('Home');
+  };
 
   const handleSubmit = async () => {
+    // Validação de campos obrigatórios
     if (!mealType.trim()) {
-      Alert.alert('Erro', 'Selecione o tipo de refeição');
+      setRequiredField('Tipo de Refeição');
+      setShowRequiredModal(true);
       return;
     }
 
@@ -43,14 +75,7 @@ export default function CheckInScreen() {
         photo: photoUri || undefined,
         observations: observations.trim() || undefined,
       });
-      Alert.alert('Sucesso!', 'Check-in registrado com sucesso!');
-      // Reset form
-      setMealType('');
-      setHungerRating(3);
-      setSatisfactionRating(3);
-      setTags([]);
-      setPhotoUri(null);
-      setObservations('');
+      setShowSuccessModal(true);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar o check-in');
     } finally {
@@ -73,27 +98,37 @@ export default function CheckInScreen() {
           <MealTypeSelector
             value={mealType}
             onValueChange={setMealType}
+            required
           />
-          {!mealType.trim() && (
-            <Text style={styles.errorText}>Por favor, selecione o tipo de refeição</Text>
-          )}
 
           <PhotoSelector
             photoUri={photoUri}
             onPhotoChange={setPhotoUri}
           />
 
-          <HungerSlider
-            label="🍽️ Nível de Fome"
-            value={hungerRating}
-            onValueChange={setHungerRating}
-          />
+          <View style={styles.fieldContainer}>
+            <View style={styles.labelRow}>
+              <Text style={styles.fieldLabel}>🍽️ Nível de Fome</Text>
+              <Text style={styles.required}>*</Text>
+            </View>
+            <HungerSlider
+              label=""
+              value={hungerRating}
+              onValueChange={setHungerRating}
+            />
+          </View>
 
-          <CatSatisfactionSlider
-            label="🐱 Satisfação com a Refeição"
-            value={satisfactionRating}
-            onValueChange={setSatisfactionRating}
-          />
+          <View style={styles.fieldContainer}>
+            <View style={styles.labelRow}>
+              <Text style={styles.fieldLabel}>🐱 Satisfação com a Refeição</Text>
+              <Text style={styles.required}>*</Text>
+            </View>
+            <CatSatisfactionSlider
+              label=""
+              value={satisfactionRating}
+              onValueChange={setSatisfactionRating}
+            />
+          </View>
 
           <TagSelector
             selectedTags={tags}
@@ -101,7 +136,7 @@ export default function CheckInScreen() {
           />
 
           <Input
-            label="Observações (opcional)"
+            label="Observações"
             value={observations}
             onChangeText={setObservations}
             placeholder="Comentários sobre a refeição..."
@@ -117,6 +152,20 @@ export default function CheckInScreen() {
             style={styles.submitButton}
           />
         </Card>
+
+        <RequiredFieldModal
+          visible={showRequiredModal}
+          fieldName={requiredField}
+          onClose={() => setShowRequiredModal(false)}
+        />
+
+        <SuccessModal
+          visible={showSuccessModal}
+          title="Check-in Registrado!"
+          message="Sua refeição foi registrada com sucesso."
+          onRegisterAnother={handleRegisterAnother}
+          onGoHome={handleGoHome}
+        />
 
         <Card style={styles.tipsCard}>
           <Text style={styles.tipsTitle}>💡 Dicas para um melhor check-in:</Text>
@@ -166,6 +215,25 @@ const styles = StyleSheet.create({
   formCard: {
     margin: 16,
     padding: 20,
+  },
+  fieldContainer: {
+    marginBottom: 20,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  fieldLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  required: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#F44336',
+    marginLeft: 4,
   },
   observationsInput: {
     minHeight: 100,

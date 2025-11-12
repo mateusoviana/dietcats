@@ -30,7 +30,7 @@ export default function CatSatisfactionSlider({
 }: CatSatisfactionSliderProps) {
   return (
     <View style={[styles.container, containerStyle]}>
-      <Text style={styles.label}>{label}</Text>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       
       <View style={styles.optionsContainer}>
         {SATISFACTION_LEVELS.map((level) => (

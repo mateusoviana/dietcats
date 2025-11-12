@@ -119,7 +119,7 @@ export default function PhotoSelector({ photoUri, onPhotoChange }: PhotoSelector
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Foto da Refeição (opcional)</Text>
+      <Text style={styles.label}>Foto da Refeição</Text>
 
       {photoUri ? (
         <View style={styles.photoContainer}>

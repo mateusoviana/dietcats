@@ -59,7 +59,7 @@ export default function TagSelector({ selectedTags, onTagsChange }: TagSelectorP
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Tags (opcional)</Text>
+      <Text style={styles.label}>Tags</Text>
       <View style={styles.tagsContainer}>
         {allAvailableTags.map((tag) => {
           const isSelected = selectedTags.includes(tag);

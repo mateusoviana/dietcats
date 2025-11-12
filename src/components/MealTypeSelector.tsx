@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 interface MealTypeSelectorProps {
   value: string;
   onValueChange: (value: string) => void;
+  required?: boolean;
 }
 
 const defaultMealTypes = [
@@ -23,7 +24,7 @@ const defaultMealTypes = [
   { label: 'Pré-treino', value: 'Pré-treino' },
 ];
 
-export default function MealTypeSelector({ value, onValueChange }: MealTypeSelectorProps) {
+export default function MealTypeSelector({ value, onValueChange, required = false }: MealTypeSelectorProps) {
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [customValue, setCustomValue] = useState('');
 
@@ -39,7 +40,10 @@ export default function MealTypeSelector({ value, onValueChange }: MealTypeSelec
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Tipo de Refeição</Text>
+      <View style={styles.labelRow}>
+        <Text style={styles.label}>Tipo de Refeição</Text>
+        {required && <Text style={styles.required}>*</Text>}
+      </View>
       <View style={styles.tagsContainer}>
         {defaultMealTypes.map((type) => (
           <TouchableOpacity
@@ -140,11 +144,21 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 20,
   },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   label: {
     fontSize: 16,
     fontWeight: '500',
     color: '#333',
-    marginBottom: 12,
+  },
+  required: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#F44336',
+    marginLeft: 4,
   },
   tagsContainer: {
     flexDirection: 'row',
