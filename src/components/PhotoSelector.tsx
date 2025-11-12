@@ -168,14 +168,6 @@ export default function PhotoSelector({ photoUri, onPhotoChange }: PhotoSelector
 
             <TouchableOpacity
               style={styles.optionButton}
-              onPress={handleTakePhoto}
-            >
-              <Ionicons name="camera" size={24} color="#40916C" />
-              <Text style={styles.optionText}>Tirar Foto</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.optionButton}
               onPress={handleChooseFromGallery}
             >
               <Ionicons name="images" size={24} color="#40916C" />

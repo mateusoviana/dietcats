@@ -15,6 +15,7 @@ import Button from '../../components/Button';
 import Card from '../../components/Card';
 import MealTypeSelector from '../../components/MealTypeSelector';
 import HungerSlider from '../../components/HungerSlider';
+import SatietySlider from '../../components/SatietySlider';
 import CatSatisfactionSlider from '../../components/CatSatisfactionSlider';
 import TagSelector from '../../components/TagSelector';
 import PhotoSelector from '../../components/PhotoSelector';
@@ -32,6 +33,7 @@ export default function CheckInScreen() {
   const { isOffline } = useNetworkStatus();
   const [mealType, setMealType] = useState('');
   const [hungerRating, setHungerRating] = useState(3);
+  const [satietyRating, setSatietyRating] = useState(3);
   const [satisfactionRating, setSatisfactionRating] = useState(3);
   const [tags, setTags] = useState<string[]>([]);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -44,6 +46,7 @@ export default function CheckInScreen() {
   const resetForm = () => {
     setMealType('');
     setHungerRating(3);
+    setSatietyRating(3);
     setSatisfactionRating(3);
     setTags([]);
     setPhotoUri(null);
@@ -57,6 +60,7 @@ export default function CheckInScreen() {
 
   const handleGoHome = () => {
     setShowSuccessModal(false);
+    resetForm();
     navigation.navigate('Home');
   };
 
@@ -82,6 +86,7 @@ export default function CheckInScreen() {
       await mealService.addCheckIn({
         mealType: mealType.trim(),
         hungerRating,
+        satietyRating,
         satisfactionRating,
         tag: tags.join(', ') || undefined,
         photo: photoUri || undefined,
@@ -131,6 +136,18 @@ export default function CheckInScreen() {
               label=""
               value={hungerRating}
               onValueChange={setHungerRating}
+            />
+          </View>
+
+          <View style={styles.fieldContainer}>
+            <View style={styles.labelRow}>
+              <Text style={styles.fieldLabel}>😴 Nível de Saciedade</Text>
+              <Text style={styles.required}>*</Text>
+            </View>
+            <SatietySlider
+              label=""
+              value={satietyRating}
+              onValueChange={setSatietyRating}
             />
           </View>
 

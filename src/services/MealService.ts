@@ -81,7 +81,7 @@ export class MealService {
       timestamp: input.timestamp ?? new Date().toISOString(),
       photo_url: photoUrl,
       hunger_rating: input.hungerRating ?? null,
-      satiety_rating: null, // Campo removido da UI, sempre null
+      satiety_rating: input.satietyRating ?? null,
       satisfaction_rating: input.satisfactionRating ?? null,
       tag: input.tag ?? null,
       observations: input.observations ?? null,
@@ -98,20 +98,40 @@ export class MealService {
   }
 
   async deleteCheckIn(id: string): Promise<void> {
-    // Get the check-in to delete its photo
-    const { data: checkIn } = await supabase
-      .from('meal_check_ins')
-      .select('photo_url')
-      .eq('id', id)
-      .single();
+    try {
+      // Get the check-in to delete its photo
+      const { data: checkIn, error: fetchError } = await supabase
+        .from('meal_check_ins')
+        .select('photo_url')
+        .eq('id', id)
+        .maybeSingle();
 
-    // Delete the check-in from database
-    const { error } = await supabase.from('meal_check_ins').delete().eq('id', id);
-    if (error) throw error;
+      if (fetchError) {
+        console.error('Error fetching check-in for deletion:', fetchError);
+      }
 
-    // Delete the photo from storage if it exists
-    if (checkIn?.photo_url) {
-      await StorageService.deletePhoto(checkIn.photo_url);
+      // Delete the check-in from database
+      const { error: deleteError } = await supabase
+        .from('meal_check_ins')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) {
+        console.error('Error deleting check-in:', deleteError);
+        throw new Error(`Falha ao excluir: ${deleteError.message}`);
+      }
+
+      // Delete the photo from storage if it exists (don't fail if photo deletion fails)
+      if (checkIn?.photo_url) {
+        try {
+          await StorageService.deletePhoto(checkIn.photo_url);
+        } catch (photoError) {
+          console.warn('Failed to delete photo, but check-in was deleted:', photoError);
+        }
+      }
+    } catch (error: any) {
+      console.error('Error in deleteCheckIn:', error);
+      throw error;
     }
   }
 

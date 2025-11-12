@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ViewStyle,
+  Image,
 } from 'react-native';
 
 interface CatSatisfactionSliderProps {
@@ -14,12 +15,14 @@ interface CatSatisfactionSliderProps {
   containerStyle?: ViewStyle;
 }
 
+const catImage = require('../../assets/images/Escala de Satisfação Felina.png');
+
 const SATISFACTION_LEVELS = [
-  { emoji: '😿', label: 'Muito insatisfeito', value: 1 },
-  { emoji: '😾', label: 'Insatisfeito', value: 2 },
-  { emoji: '😺', label: 'Neutro', value: 3 },
-  { emoji: '😸', label: 'Satisfeito', value: 4 },
-  { emoji: '😻', label: 'Muito satisfeito', value: 5 },
+  { label: 'Muito insatisfeito', value: 1 },
+  { label: 'Insatisfeito', value: 2 },
+  { label: 'Neutro', value: 3 },
+  { label: 'Satisfeito', value: 4 },
+  { label: 'Muito satisfeito', value: 5 },
 ];
 
 export default function CatSatisfactionSlider({
@@ -33,7 +36,7 @@ export default function CatSatisfactionSlider({
       {label ? <Text style={styles.label}>{label}</Text> : null}
       
       <View style={styles.optionsContainer}>
-        {SATISFACTION_LEVELS.map((level) => (
+        {SATISFACTION_LEVELS.map((level, index) => (
           <TouchableOpacity
             key={level.value}
             style={[
@@ -43,7 +46,18 @@ export default function CatSatisfactionSlider({
             onPress={() => onValueChange(level.value)}
             activeOpacity={0.7}
           >
-            <Text style={styles.emoji}>{level.emoji}</Text>
+            <View style={styles.catImageContainer}>
+              <Image
+                source={catImage}
+                style={{
+                  width: 350, // 5 cats × 70px
+                  height: 70,
+                  position: 'absolute',
+                  left: -(index * 70), // Move to show specific cat
+                }}
+                resizeMode="cover"
+              />
+            </View>
             <Text style={[
               styles.optionLabel,
               value === level.value && styles.optionLabelSelected,
@@ -73,33 +87,40 @@ const styles = StyleSheet.create({
   optionsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 8,
+    width: '100%',
   },
   option: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    padding: 8,
     borderRadius: 12,
     backgroundColor: '#F5F5F5',
     borderWidth: 2,
     borderColor: 'transparent',
-    minWidth: 80,
+    width: 90,
   },
   optionSelected: {
     backgroundColor: '#E8F5E9',
     borderColor: '#40916C',
   },
-  emoji: {
-    fontSize: 40,
-    marginBottom: 6,
+  catImageContainer: {
+    width: 70,
+    height: 70,
+    overflow: 'hidden',
+    marginBottom: 8,
+    backgroundColor: 'transparent',
+    borderRadius: 8,
+    position: 'relative',
   },
   optionLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
     fontWeight: '500',
     textAlign: 'center',
+    lineHeight: 14,
   },
   optionLabelSelected: {
     color: '#40916C',

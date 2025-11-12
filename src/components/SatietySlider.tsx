@@ -8,35 +8,53 @@ import {
   Image,
 } from 'react-native';
 
-interface HungerSliderProps {
+interface SatietySliderProps {
   value: number;
   onValueChange: (value: number) => void;
   label: string;
   containerStyle?: ViewStyle;
 }
 
-const bowlsImage = require('../../assets/images/Bowls de Ração Gradualmente Cheias.png');
-
-const HUNGER_LEVELS = [
-  { label: 'Sem fome', value: 1 },
-  { label: 'Pouca fome', value: 2 },
-  { label: 'Fome média', value: 3 },
-  { label: 'Com fome', value: 4 },
-  { label: 'Muita fome', value: 5 },
+const SATIETY_LEVELS = [
+  { 
+    label: 'Nada saciado', 
+    value: 1,
+    image: require('../../assets/images/saciedade_icones/saciedade1.png')
+  },
+  { 
+    label: 'Pouco saciado', 
+    value: 2,
+    image: require('../../assets/images/saciedade_icones/saciedade2.png')
+  },
+  { 
+    label: 'Médio', 
+    value: 3,
+    image: require('../../assets/images/saciedade_icones/saciedade3.png')
+  },
+  { 
+    label: 'Saciado', 
+    value: 4,
+    image: require('../../assets/images/saciedade_icones/saciedade4.png')
+  },
+  { 
+    label: 'Muito saciado', 
+    value: 5,
+    image: require('../../assets/images/saciedade_icones/saciedade5.png')
+  },
 ];
 
-export default function HungerSlider({
+export default function SatietySlider({
   value,
   onValueChange,
   label,
   containerStyle,
-}: HungerSliderProps) {
+}: SatietySliderProps) {
   return (
     <View style={[styles.container, containerStyle]}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
       
       <View style={styles.optionsContainer}>
-        {HUNGER_LEVELS.map((level, index) => (
+        {SATIETY_LEVELS.map((level) => (
           <TouchableOpacity
             key={level.value}
             style={[
@@ -46,16 +64,11 @@ export default function HungerSlider({
             onPress={() => onValueChange(level.value)}
             activeOpacity={0.7}
           >
-            <View style={styles.bowlImageContainer}>
+            <View style={styles.catImageContainer}>
               <Image
-                source={bowlsImage}
-                style={{
-                  width: 350, // 5 bowls × 70px
-                  height: 70,
-                  position: 'absolute',
-                  left: -(index * 70), // Move to show specific bowl
-                }}
-                resizeMode="cover"
+                source={level.image}
+                style={styles.catImage}
+                resizeMode="contain"
               />
             </View>
             <Text style={[
@@ -106,14 +119,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8F5E9',
     borderColor: '#40916C',
   },
-  bowlImageContainer: {
+  catImageContainer: {
     width: 70,
     height: 70,
     overflow: 'hidden',
     marginBottom: 8,
     backgroundColor: 'transparent',
     borderRadius: 8,
-    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  catImage: {
+    width: '100%',
+    height: '100%',
   },
   optionLabel: {
     fontSize: 11,
