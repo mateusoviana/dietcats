@@ -29,9 +29,29 @@ function fromDB(row: any): MealCheckIn {
 }
 
 export class MealService {
-  async getMyCheckIns(): Promise<MealCheckIn[]> {
+  // Cache the user ID to avoid repeated getSession calls
+  private static cachedUserId: string | null = null;
+  
+  private static async getUserId(): Promise<string> {
+    if (this.cachedUserId) {
+      return this.cachedUserId;
+    }
+    
     const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session?.user) throw new Error('Não autenticado');
+    const uid = sessionData.session?.user?.id;
+    if (!uid) throw new Error('Não autenticado');
+    
+    this.cachedUserId = uid;
+    return uid;
+  }
+  
+  // Clear cache on logout
+  static clearCache(): void {
+    this.cachedUserId = null;
+  }
+  
+  async getMyCheckIns(): Promise<MealCheckIn[]> {
+    await MealService.getUserId(); // Just to ensure we're authenticated
     const { data, error } = await supabase
       .from('meal_check_ins')
       .select('*')
@@ -41,9 +61,7 @@ export class MealService {
   }
 
   async addCheckIn(input: NewMealCheckIn): Promise<MealCheckIn> {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const uid = sessionData.session?.user?.id;
-    if (!uid) throw new Error('Não autenticado');
+    const uid = await MealService.getUserId();
 
     // Upload photo if it exists and is a local file
     let photoUrl = input.photo ?? null;
@@ -68,11 +86,13 @@ export class MealService {
       tag: input.tag ?? null,
       observations: input.observations ?? null,
     };
+    
     const { data, error } = await supabase
       .from('meal_check_ins')
       .insert(payload)
       .select('*')
       .single();
+      
     if (error) throw error;
     return fromDB(data);
   }
@@ -99,9 +119,7 @@ export class MealService {
     id: string,
     input: Partial<NewMealCheckIn>
   ): Promise<MealCheckIn> {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const uid = sessionData.session?.user?.id;
-    if (!uid) throw new Error('Não autenticado');
+    const uid = await MealService.getUserId();
 
     const payload: any = {};
     if (input.mealType !== undefined) payload.meal_type = input.mealType;

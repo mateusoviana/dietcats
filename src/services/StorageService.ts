@@ -35,34 +35,58 @@ export class StorageService {
   static async uploadPhoto(uri: string, userId: string): Promise<string> {
     try {
       // If it's already a URL from internet, return as-is
-      if (uri.startsWith('http://') || uri.startsWith('https://')) {
+      if (uri.startsWith('http://') && !uri.startsWith('http://localhost')) {
+        return uri;
+      }
+      if (uri.startsWith('https://') && !uri.includes('supabase')) {
         return uri;
       }
 
       // Generate unique filename
       const timestamp = Date.now();
-      const fileExt = uri.split('.').pop() || 'jpg';
-      const fileName = `${userId}/${timestamp}.${fileExt}`;
-
+      let fileExt = 'jpg';
+      let contentType = 'image/jpeg';
       let arrayBuffer: ArrayBuffer;
+      let blob: Blob | null = null;
 
       // Different handling for web vs mobile
       if (Platform.OS === 'web') {
         // Web: Convert blob URL to blob
-        arrayBuffer = await this.getBlobFromUri(uri);
+        const response = await fetch(uri);
+        blob = await response.blob();
+        arrayBuffer = await blob.arrayBuffer();
+        
+        // Get the actual content type from the blob
+        contentType = blob.type || 'image/jpeg';
+        
+        // Determine file extension from content type
+        if (contentType.includes('png')) {
+          fileExt = 'png';
+        } else if (contentType.includes('webp')) {
+          fileExt = 'webp';
+        } else if (contentType.includes('gif')) {
+          fileExt = 'gif';
+        } else {
+          fileExt = 'jpg';
+        }
       } else {
         // Mobile: Read as base64 and convert
+        fileExt = uri.split('.').pop() || 'jpg';
+        contentType = `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`;
+        
         const base64 = await FileSystem.readAsStringAsync(uri, {
           encoding: FileSystem.EncodingType.Base64,
         });
         arrayBuffer = decode(base64);
       }
 
+      const fileName = `${userId}/${timestamp}.${fileExt}`;
+
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from(this.BUCKET_NAME)
         .upload(fileName, arrayBuffer, {
-          contentType: `image/${fileExt}`,
+          contentType: contentType,
           upsert: false,
         });
 
@@ -83,14 +107,6 @@ export class StorageService {
     }
   }
 
-  /**
-   * Web-specific: Convert blob URL to ArrayBuffer
-   */
-  private static async getBlobFromUri(blobUrl: string): Promise<ArrayBuffer> {
-    const response = await fetch(blobUrl);
-    const blob = await response.blob();
-    return await blob.arrayBuffer();
-  }
 
   /**
    * Deletes a photo from storage

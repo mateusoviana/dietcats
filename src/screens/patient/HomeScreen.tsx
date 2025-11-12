@@ -6,12 +6,18 @@ import {
   ScrollView,
   RefreshControl,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../../contexts/AuthContext';
+import { PatientTabParamList } from '../../types';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 
+type HomeScreenNavigationProp = BottomTabNavigationProp<PatientTabParamList, 'Home'>;
+
 export default function HomeScreen() {
   const { user } = useAuth();
+  const navigation = useNavigation<HomeScreenNavigationProp>();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = React.useCallback(() => {
@@ -51,7 +57,7 @@ export default function HomeScreen() {
           </Text>
           <Button
             title="Fazer Check-in"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('CheckIn')}
             style={styles.checkInButton}
           />
         </Card>
@@ -81,7 +87,7 @@ export default function HomeScreen() {
           </Text>
           <Button
             title="Ver Competições"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('Competitions')}
             variant="outline"
             style={styles.competitionsButton}
           />

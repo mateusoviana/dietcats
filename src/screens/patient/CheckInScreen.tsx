@@ -12,7 +12,7 @@ import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import MealTypeSelector from '../../components/MealTypeSelector';
-import PlateRating from '../../components/PlateRating';
+import HungerSlider from '../../components/HungerSlider';
 import CatSatisfactionSlider from '../../components/CatSatisfactionSlider';
 import TagSelector from '../../components/TagSelector';
 import PhotoSelector from '../../components/PhotoSelector';
@@ -78,7 +78,12 @@ export default function CheckInScreen() {
             <Text style={styles.errorText}>Por favor, selecione o tipo de refeição</Text>
           )}
 
-          <PlateRating
+          <PhotoSelector
+            photoUri={photoUri}
+            onPhotoChange={setPhotoUri}
+          />
+
+          <HungerSlider
             label="🍽️ Nível de Fome"
             value={hungerRating}
             onValueChange={setHungerRating}
@@ -88,11 +93,6 @@ export default function CheckInScreen() {
             label="🐱 Satisfação com a Refeição"
             value={satisfactionRating}
             onValueChange={setSatisfactionRating}
-          />
-
-          <PhotoSelector
-            photoUri={photoUri}
-            onPhotoChange={setPhotoUri}
           />
 
           <TagSelector

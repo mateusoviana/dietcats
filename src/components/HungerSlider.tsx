@@ -7,33 +7,33 @@ import {
   ViewStyle,
 } from 'react-native';
 
-interface CatSatisfactionSliderProps {
+interface HungerSliderProps {
   value: number;
   onValueChange: (value: number) => void;
   label: string;
   containerStyle?: ViewStyle;
 }
 
-const SATISFACTION_LEVELS = [
-  { emoji: '😿', label: 'Muito insatisfeito', value: 1 },
-  { emoji: '😾', label: 'Insatisfeito', value: 2 },
-  { emoji: '😺', label: 'Neutro', value: 3 },
-  { emoji: '😸', label: 'Satisfeito', value: 4 },
-  { emoji: '😻', label: 'Muito satisfeito', value: 5 },
+const HUNGER_LEVELS = [
+  { emoji: '🍽️', label: 'Sem fome', value: 1 },
+  { emoji: '🥗', label: 'Pouca fome', value: 2 },
+  { emoji: '🍱', label: 'Fome média', value: 3 },
+  { emoji: '🍲', label: 'Com fome', value: 4 },
+  { emoji: '🍜', label: 'Muita fome', value: 5 },
 ];
 
-export default function CatSatisfactionSlider({
+export default function HungerSlider({
   value,
   onValueChange,
   label,
   containerStyle,
-}: CatSatisfactionSliderProps) {
+}: HungerSliderProps) {
   return (
     <View style={[styles.container, containerStyle]}>
       <Text style={styles.label}>{label}</Text>
       
       <View style={styles.optionsContainer}>
-        {SATISFACTION_LEVELS.map((level) => (
+        {HUNGER_LEVELS.map((level) => (
           <TouchableOpacity
             key={level.value}
             style={[
