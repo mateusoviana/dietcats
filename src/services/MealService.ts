@@ -51,10 +51,11 @@ export class MealService {
   }
   
   async getMyCheckIns(): Promise<MealCheckIn[]> {
-    await MealService.getUserId(); // Just to ensure we're authenticated
+    const uid = await MealService.getUserId();
     const { data, error } = await supabase
       .from('meal_check_ins')
       .select('*')
+      .eq('patient_id', uid)
       .order('timestamp', { ascending: false });
     if (error) throw error;
     return (data || []).map(fromDB);

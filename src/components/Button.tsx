@@ -71,7 +71,7 @@ export default function Button({
       activeOpacity={0.7}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : '#4CAF50'} />
+        <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : '#40916C'} />
       ) : (
         <Text style={getTextStyle()}>{title}</Text>
       )}

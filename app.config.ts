@@ -39,6 +39,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'CAMERA',
         'READ_EXTERNAL_STORAGE',
         'WRITE_EXTERNAL_STORAGE',
+        'NOTIFICATIONS',
+        'SCHEDULE_EXACT_ALARM',
+        'USE_EXACT_ALARM',
       ],
     },
     web: {
@@ -46,6 +49,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     plugins: [
       'expo-image-picker',
+      [
+        'expo-notifications',
+        {
+          icon: './assets/images/dietcats_icon.png',
+          color: '#4CAF50',
+          sounds: [],
+        },
+      ],
     ],
     extra: {
       SUPABASE_URL,

@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C',
   },
   title: {
     fontSize: 24,
@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectedPeriodButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C',
   },
   periodButtonText: {
     fontSize: 14,
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
   },
   cardTag: {
     fontSize: 10,
-    color: '#4CAF50',
+    color: '#40916C',
     fontWeight: '500',
   },
   cardRatings: {
@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
   },
   tag: {
     fontSize: 12,
-    color: '#4CAF50',
+    color: '#40916C',
     fontWeight: '500',
   },
   ratingsContainer: {
