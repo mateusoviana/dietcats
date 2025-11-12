@@ -6,12 +6,14 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import { competitionService } from '../../services/CompetitionService';
 import { Competition } from '../../types';
+import supabase from '../../lib/supabase';
 
 export default function CompetitionsScreen() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
@@ -23,9 +25,31 @@ export default function CompetitionsScreen() {
 
   const loadCompetitions = async () => {
     try {
+      console.log('🔄 [CompetitionsScreen] Loading competitions...');
+      
+      // Debug: verificar sessão
+      const { data: sessionData } = await supabase.auth.getSession();
+      const uid = sessionData?.session?.user?.id;
+      const email = sessionData?.session?.user?.email;
+      
+      console.log('👤 Session UID:', uid);
+      console.log('📧 Session Email:', email);
+      
       const data = await competitionService.listOwned();
+      console.log('✅ [CompetitionsScreen] Loaded:', data.length, 'competitions');
+      console.log('📊 Competitions:', JSON.stringify(data, null, 2));
+      
+      // Alert visual para debug
+      Alert.alert(
+        'Debug Info',
+        `UID: ${uid}\nEmail: ${email}\nCompetições: ${data.length}`,
+        [{ text: 'OK' }]
+      );
+      
       setCompetitions(data);
     } catch (e) {
+      console.error('❌ [CompetitionsScreen] Error loading competitions:', e);
+      Alert.alert('Erro', String(e));
       setCompetitions([]);
     }
   };

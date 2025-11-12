@@ -24,7 +24,20 @@ export default function CompetitionsScreen() {
   const loadCompetitions = async () => {
     try {
       const data = await competitionService.listVisible();
-      setCompetitions(data);
+      
+      // Fetch scores for each competition
+      const competitionsWithScores = await Promise.all(
+        data.map(async (comp) => {
+          try {
+            const myScore = await competitionService.getMyScore(comp.id);
+            return { ...comp, myScore: myScore || undefined };
+          } catch (e) {
+            return comp;
+          }
+        })
+      );
+      
+      setCompetitions(competitionsWithScores);
     } catch (e) {
       setCompetitions([]);
     }
@@ -88,7 +101,25 @@ export default function CompetitionsScreen() {
         </View>
       </View>
 
-      {/* Posição/pontos do usuário não implementados ainda */}
+      {/* Exibir pontuação do usuário */}
+      {competition.myScore && (
+        <View style={styles.userStats}>
+          <View style={styles.userStatItem}>
+            <Text style={styles.userStatLabel}>Minha Pontuação</Text>
+            <Text style={styles.userStatValue}>{competition.myScore.score} pts</Text>
+          </View>
+          <View style={styles.userStatItem}>
+            <Text style={styles.userStatLabel}>Check-ins</Text>
+            <Text style={styles.userStatValue}>{competition.myScore.checkInCount}</Text>
+          </View>
+          {competition.myScore.rank && (
+            <View style={styles.userStatItem}>
+              <Text style={styles.userStatLabel}>Posição</Text>
+              <Text style={styles.userStatValue}>{getPositionIcon(competition.myScore.rank)}</Text>
+            </View>
+          )}
+        </View>
+      )}
 
       <View style={styles.competitionFooter}>
         <Text style={styles.dateRange}>

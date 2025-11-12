@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { accountService } from '../../services/AccountService';
+import { associationService } from '../../services/AssociationService';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
@@ -22,9 +23,30 @@ export default function ProfileScreen() {
   const [email, setEmail] = useState(user?.email || '');
   const [associationCode, setAssociationCode] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [nutritionist, setNutritionist] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [isAssociating, setIsAssociating] = useState(false);
   
   // --- 1. Adicionar estado para os erros de validação ---
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // Load nutritionist on mount
+  useEffect(() => {
+    loadNutritionist();
+  }, []);
+
+  const loadNutritionist = async () => {
+    console.log('🔄 [ProfileScreen] loadNutritionist called');
+    try {
+      console.log('🔄 [ProfileScreen] Calling associationService.getMyNutritionist...');
+      const data = await associationService.getMyNutritionist();
+      console.log('🔄 [ProfileScreen] Nutritionist data received:', data);
+      setNutritionist(data);
+      console.log('✅ [ProfileScreen] Nutritionist state updated');
+    } catch (error) {
+      console.error('❌ [ProfileScreen] Error loading nutritionist:', error);
+      console.error('❌ [ProfileScreen] Error details:', JSON.stringify(error, null, 2));
+    }
+  };
 
   // --- 2. Criar função de validação ---
   const validateProfile = () => {
@@ -148,16 +170,69 @@ export default function ProfileScreen() {
     );
   };
 
-  const handleAssociateNutritionist = () => {
+  const handleAssociateNutritionist = async () => {
+    console.log('🟢 [ProfileScreen] handleAssociateNutritionist called');
+    console.log('🟢 [ProfileScreen] associationCode:', associationCode);
+    
     if (!associationCode.trim()) {
+      console.log('❌ [ProfileScreen] Code is empty');
       Alert.alert('Erro', 'Digite o código de associação');
       return;
     }
 
+    console.log('🟢 [ProfileScreen] Setting isAssociating to true');
+    setIsAssociating(true);
+    
+    try {
+      console.log('🟢 [ProfileScreen] Calling associationService.associateWithCode...');
+      const result = await associationService.associateWithCode(associationCode);
+      console.log('🟢 [ProfileScreen] Result received:', result);
+      
+      if (result.success) {
+        console.log('✅ [ProfileScreen] Association successful!');
+        Alert.alert(
+          'Sucesso!',
+          `Você foi associado com ${result.nutritionistName}`,
+          [{ text: 'OK', onPress: () => {
+            console.log('🟢 [ProfileScreen] OK pressed, clearing code and reloading...');
+            setAssociationCode('');
+            loadNutritionist(); // Reload nutritionist data
+          }}]
+        );
+      } else {
+        console.log('❌ [ProfileScreen] Association failed:', result.error);
+        Alert.alert('Erro', result.error || 'Código inválido');
+      }
+    } catch (error) {
+      console.error('💥 [ProfileScreen] Exception in handleAssociateNutritionist:', error);
+      console.error('💥 [ProfileScreen] Error details:', JSON.stringify(error, null, 2));
+      Alert.alert('Erro', 'Não foi possível associar com o nutricionista');
+    } finally {
+      console.log('🟢 [ProfileScreen] Setting isAssociating to false');
+      setIsAssociating(false);
+    }
+  };
+
+  const handleRemoveAssociation = () => {
     Alert.alert(
-      'Associação',
-      'Associação com nutricionista realizada com sucesso!',
-      [{ text: 'OK', onPress: () => setAssociationCode('') }]
+      'Remover Associação',
+      `Deseja remover a associação com ${nutritionist?.name}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Remover',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await associationService.removeAssociation();
+              setNutritionist(null);
+              Alert.alert('Sucesso', 'Associação removida');
+            } catch (error) {
+              Alert.alert('Erro', 'Não foi possível remover a associação');
+            }
+          }
+        }
+      ]
     );
   };
 
@@ -269,21 +344,48 @@ export default function ProfileScreen() {
         </Card>
 
         <Card style={styles.associationCard}>
-          <Text style={styles.cardTitle}>Associar Nutricionista</Text>
-          <Text style={styles.cardSubtitle}>
-            Digite o código fornecido pelo seu nutricionista
+          <Text style={styles.cardTitle}>
+            {nutritionist ? 'Meu Nutricionista' : 'Associar Nutricionista'}
           </Text>
-          <Input
-            placeholder="Código de associação"
-            value={associationCode}
-            onChangeText={setAssociationCode}
-            style={styles.associationInput}
-          />
-          <Button
-            title="Associar"
-            onPress={handleAssociateNutritionist}
-            style={styles.associateButton}
-          />
+          
+          {nutritionist ? (
+            <>
+              <View style={styles.nutritionistInfo}>
+                <View style={styles.nutritionistIcon}>
+                  <Ionicons name="medical" size={32} color="#4CAF50" />
+                </View>
+                <View style={styles.nutritionistDetails}>
+                  <Text style={styles.nutritionistName}>{nutritionist.name}</Text>
+                  <Text style={styles.nutritionistEmail}>{nutritionist.email}</Text>
+                </View>
+              </View>
+              <Button
+                title="Remover Associação"
+                onPress={handleRemoveAssociation}
+                variant="outline"
+                style={styles.removeButton}
+              />
+            </>
+          ) : (
+            <>
+              <Text style={styles.cardSubtitle}>
+                Digite o código fornecido pelo seu nutricionista
+              </Text>
+              <Input
+                placeholder="Código de associação"
+                value={associationCode}
+                onChangeText={setAssociationCode}
+                style={styles.associationInput}
+                autoCapitalize="characters"
+              />
+              <Button
+                title={isAssociating ? "Associando..." : "Associar"}
+                onPress={handleAssociateNutritionist}
+                style={styles.associateButton}
+                disabled={isAssociating}
+              />
+            </>
+          )}
         </Card>
 
         <Card style={styles.menuCard}>
@@ -439,6 +541,38 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   associateButton: {
+    alignSelf: 'flex-start',
+  },
+  nutritionistInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    width: '100%',
+  },
+  nutritionistIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#E8F5E8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  nutritionistDetails: {
+    flex: 1,
+  },
+  nutritionistName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  nutritionistEmail: {
+    fontSize: 14,
+    color: '#666',
+  },
+  removeButton: {
+    borderColor: '#F44336',
     alignSelf: 'flex-start',
   },
   menuCard: {
