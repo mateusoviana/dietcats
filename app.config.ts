@@ -17,21 +17,28 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     splash: {
       image: './assets/images/dietcats.png',
       resizeMode: 'cover',
-      backgroundColor: '#4CAF50',
+      backgroundColor: '#40916C',
     },
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.dietcats.app',
+      infoPlist: {
+        NSCameraUsageDescription: 'Este app precisa acessar sua câmera para tirar fotos das refeições.',
+        NSPhotoLibraryUsageDescription: 'Este app precisa acessar sua galeria para escolher fotos das refeições.',
+      },
     },
     android: {
       adaptiveIcon: {
         foregroundImage: './assets/images/dietcats_icon.png',
-        backgroundColor: '#4CAF50',
+        backgroundColor: '#40916C',
       },
       package: 'com.dietcats.app',
       versionCode: 1,
       permissions: [
+        'CAMERA',
+        'READ_EXTERNAL_STORAGE',
+        'WRITE_EXTERNAL_STORAGE',
         'NOTIFICATIONS',
         'SCHEDULE_EXACT_ALARM',
         'USE_EXACT_ALARM',
