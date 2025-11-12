@@ -14,7 +14,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../../contexts/AuthContext';
-import { PatientTabParamList } from '../../types';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
