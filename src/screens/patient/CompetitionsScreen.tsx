@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C',
   },
   title: {
     fontSize: 24,
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#40916C',
     marginBottom: 16,
   },
   summaryStats: {
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   summaryNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#40916C',
   },
   summaryLabel: {
     fontSize: 14,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activeBadge: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
   userStatValue: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#40916C',
   },
   competitionFooter: {
     flexDirection: 'row',

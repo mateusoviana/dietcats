@@ -52,7 +52,7 @@ class NotificationService {
           name: 'Lembretes de Refeição',
           importance: Notifications.AndroidImportance.HIGH,
           vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#4CAF50',
+          lightColor: '#40916C',
         });
       }
 

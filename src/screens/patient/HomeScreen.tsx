@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
   },
   scheduleTime: {
     fontSize: 14,
-    color: '#4CAF50',
+    color: '#40916C',
     fontWeight: '600',
   },
   removeButton: {
@@ -617,15 +617,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#4CAF50',
+    borderColor: '#40916C',
     backgroundColor: '#FFFFFF',
   },
   mealTypeButtonSelected: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C',
   },
   mealTypeText: {
     fontSize: 14,
-    color: '#4CAF50',
+    color: '#40916C',
   },
   mealTypeTextSelected: {
     color: '#FFFFFF',
@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
   webTimeButton: {
     width: 60,
     height: 40,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#4CAF50',
+    borderColor: '#40916C',
     justifyContent: 'center',
     alignItems: 'center',
     marginVertical: 4,
