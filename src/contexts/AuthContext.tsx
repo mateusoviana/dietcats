@@ -15,18 +15,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // On web, ensure we exchange any OAuth code in URL into a session (robust fallback)
-    const maybeExchange = async () => {
-      try {
-        if (Platform.OS === 'web') {
-          await supabase.auth.exchangeCodeForSession(window.location.href);
-        }
-      } catch {}
-    };
-
-    maybeExchange().finally(() => {
-      checkAuthState();
-    });
+    checkAuthState();
+    
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         const profileUser = await loadCurrentUser();
