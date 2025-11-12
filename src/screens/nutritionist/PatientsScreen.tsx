@@ -6,10 +6,14 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import { associationService } from '../../services/AssociationService';
+import supabase from '../../lib/supabase';
 
 interface Patient {
   id: string;
@@ -22,52 +26,110 @@ interface Patient {
 }
 
 export default function PatientsScreen() {
+  const navigation = useNavigation<any>();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [associationCode, setAssociationCode] = useState('');
-
-  // Dados mockados para demonstração
-  const mockPatients: Patient[] = [
-    {
-      id: '1',
-      name: 'João Silva',
-      email: 'joao@email.com',
-      lastCheckIn: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      totalCheckIns: 45,
-      adherenceRate: 85,
-      isActive: true,
-    },
-    {
-      id: '2',
-      name: 'Maria Santos',
-      email: 'maria@email.com',
-      lastCheckIn: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      totalCheckIns: 32,
-      adherenceRate: 78,
-      isActive: true,
-    },
-    {
-      id: '3',
-      name: 'Pedro Costa',
-      email: 'pedro@email.com',
-      lastCheckIn: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      totalCheckIns: 28,
-      adherenceRate: 65,
-      isActive: false,
-    },
-  ];
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
   useEffect(() => {
-    loadPatients();
+    loadData();
   }, []);
 
+  const loadData = async () => {
+    await Promise.all([loadCode(), loadPatients()]);
+  };
+
+  const loadCode = async () => {
+    try {
+      const code = await associationService.getMyCode();
+      if (code) {
+        setAssociationCode(code);
+      }
+    } catch (error) {
+      console.error('Error loading code:', error);
+    }
+  };
+
   const loadPatients = async () => {
-    setPatients(mockPatients);
+    try {
+      console.log('🔄 [PatientsScreen] Loading patients...');
+      const data = await associationService.getMyPatients();
+      console.log('🔄 [PatientsScreen] Patients loaded:', data.length);
+
+      // Buscar check-ins de cada paciente para calcular estatísticas
+      const patientsWithStats = await Promise.all(
+        data.map(async (p) => {
+          try {
+            // Buscar check-ins do paciente
+            const { data: checkIns, error } = await supabase
+              .from('meal_check_ins')
+              .select('timestamp')
+              .eq('patient_id', p.id);
+
+            if (error) throw error;
+
+            const totalCheckIns = checkIns?.length || 0;
+            
+            // Calcular último check-in
+            let lastCheckIn: string | undefined;
+            if (checkIns && checkIns.length > 0) {
+              const sorted = checkIns.sort((a, b) => 
+                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+              );
+              lastCheckIn = sorted[0].timestamp;
+            }
+
+            // Calcular taxa de adesão (check-ins nos últimos 7 dias)
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            const recentCheckIns = checkIns?.filter(
+              (ci) => new Date(ci.timestamp) >= sevenDaysAgo
+            ).length || 0;
+            
+            // Taxa de adesão: (check-ins na semana / 21 esperados) * 100
+            // 21 = 3 refeições/dia * 7 dias
+            const adherenceRate = Math.min(100, Math.round((recentCheckIns / 21) * 100));
+            
+            // Consideramos ativo se teve check-in nos últimos 3 dias
+            const threeDaysAgo = new Date();
+            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+            const isActive = lastCheckIn ? new Date(lastCheckIn) >= threeDaysAgo : false;
+
+            return {
+              id: p.id,
+              name: p.name,
+              email: p.email,
+              lastCheckIn,
+              totalCheckIns,
+              adherenceRate,
+              isActive,
+            };
+          } catch (error) {
+            console.error(`❌ Error loading stats for patient ${p.id}:`, error);
+            return {
+              id: p.id,
+              name: p.name,
+              email: p.email,
+              totalCheckIns: 0,
+              adherenceRate: 0,
+              isActive: false,
+            };
+          }
+        })
+      );
+
+      console.log('✅ [PatientsScreen] Patients with stats loaded');
+      setPatients(patientsWithStats);
+    } catch (error) {
+      console.error('❌ [PatientsScreen] Error loading patients:', error);
+      setPatients([]);
+    }
   };
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    loadPatients().finally(() => {
+    loadData().finally(() => {
       setRefreshing(false);
     });
   }, []);
@@ -95,9 +157,18 @@ export default function PatientsScreen() {
     return '#F44336';
   };
 
-  const generateAssociationCode = () => {
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    setAssociationCode(code);
+  const generateAssociationCode = async () => {
+    setIsGeneratingCode(true);
+    try {
+      const code = await associationService.generateCode();
+      setAssociationCode(code);
+      Alert.alert('Código Gerado', `Seu código é: ${code}\n\nCompartilhe com seus pacientes!`);
+    } catch (error) {
+      console.error('Error generating code:', error);
+      Alert.alert('Erro', 'Não foi possível gerar o código');
+    } finally {
+      setIsGeneratingCode(false);
+    }
   };
 
   const renderPatient = (patient: Patient) => (
@@ -140,13 +211,46 @@ export default function PatientsScreen() {
       <View style={styles.patientActions}>
         <Button
           title="Ver Dashboard"
-          onPress={() => {}}
+          onPress={() => {
+            navigation.navigate('PatientDashboard', {
+              patientId: patient.id,
+              patientName: patient.name,
+            });
+          }}
           variant="outline"
           style={styles.actionButton}
         />
         <Button
           title="Remover"
-          onPress={() => {}}
+          onPress={() => {
+            Alert.alert(
+              'Remover Paciente',
+              `Deseja remover ${patient.name} da sua lista?`,
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                  text: 'Remover',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      // Remover associação
+                      const { error } = await supabase
+                        .from('profiles')
+                        .update({ nutritionist_id: null })
+                        .eq('id', patient.id);
+
+                      if (error) throw error;
+
+                      Alert.alert('Sucesso', 'Paciente removido');
+                      loadData();
+                    } catch (error) {
+                      Alert.alert('Erro', 'Não foi possível remover o paciente');
+                    }
+                  },
+                },
+              ]
+            );
+          }}
           variant="outline"
           style={styles.actionButton}
         />
@@ -183,9 +287,10 @@ export default function PatientsScreen() {
             </View>
           ) : (
             <Button
-              title="Gerar Código"
+              title={isGeneratingCode ? "Gerando..." : "Gerar Código"}
               onPress={generateAssociationCode}
               style={styles.generateButton}
+              disabled={isGeneratingCode}
             />
           )}
         </Card>
