@@ -57,12 +57,25 @@ export interface Competition {
   participants: string[]; // Patient IDs
   scoringCriteria: ScoringCriteria;
   createdAt: string;
+  isActive?: boolean; // Computed: whether competition is currently active
+  scores?: CompetitionScore[]; // Optional: scores for all participants
+  myScore?: CompetitionScore; // Optional: current user's score
 }
 
 export interface ScoringCriteria {
   checkInPoints: number;
   consistencyBonus: number;
   ratingBonus: number;
+}
+
+export interface CompetitionScore {
+  competitionId: string;
+  patientId: string;
+  patientName?: string; // Optional: populated from profile
+  score: number;
+  checkInCount: number;
+  lastCheckInDate?: string;
+  rank?: number; // Optional: computed rank in leaderboard
 }
 
 export interface CompetitionFeed {
