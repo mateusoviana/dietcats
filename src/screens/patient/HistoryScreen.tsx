@@ -13,7 +13,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import OfflineMessage from '../../components/OfflineMessage';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import { MealCheckIn } from '../../types';
 import { mealService } from '../../services/MealService';
 import Input from '../../components/Input';
@@ -21,6 +23,7 @@ import RatingSelector from '../../components/RatingSelector';
 
 export default function HistoryScreen() {
   const { user } = useAuth();
+  const { isOffline } = useNetworkStatus();
   const [checkIns, setCheckIns] = useState<MealCheckIn[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month'>('today');
@@ -34,10 +37,15 @@ export default function HistoryScreen() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadCheckIns();
-  }, [selectedPeriod]);
+    if (!isOffline) {
+      loadCheckIns();
+    }
+  }, [selectedPeriod, isOffline]);
 
   const loadCheckIns = async () => {
+    if (isOffline) {
+      return;
+    }
     try {
       const data = await mealService.getMyCheckIns();
       // For now, ignore period filter client-side (could be filtered by date)
@@ -114,11 +122,15 @@ export default function HistoryScreen() {
   };
 
   const onRefresh = React.useCallback(() => {
+    if (isOffline) {
+      setRefreshing(false);
+      return;
+    }
     setRefreshing(true);
     loadCheckIns().finally(() => {
       setRefreshing(false);
     });
-  }, [selectedPeriod]);
+  }, [selectedPeriod, isOffline]);
 
   const getPeriodText = () => {
     switch (selectedPeriod) {
@@ -259,10 +271,16 @@ export default function HistoryScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            enabled={!isOffline}
+          />
         }
       >
-        {checkIns.length === 0 ? (
+        {isOffline ? (
+          <OfflineMessage />
+        ) : checkIns.length === 0 ? (
           <Card style={styles.emptyCard}>
             <Ionicons name="restaurant-outline" size={64} color="#E0E0E0" />
             <Text style={styles.emptyTitle}>Nenhum check-in encontrado</Text>

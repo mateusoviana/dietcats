@@ -20,6 +20,8 @@ import TagSelector from '../../components/TagSelector';
 import PhotoSelector from '../../components/PhotoSelector';
 import RequiredFieldModal from '../../components/RequiredFieldModal';
 import SuccessModal from '../../components/SuccessModal';
+import OfflineMessage from '../../components/OfflineMessage';
+import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import { PatientTabParamList } from '../../types';
 import { mealService } from '../../services/MealService';
 
@@ -27,6 +29,7 @@ type CheckInScreenNavigationProp = BottomTabNavigationProp<PatientTabParamList, 
 
 export default function CheckInScreen() {
   const navigation = useNavigation<CheckInScreenNavigationProp>();
+  const { isOffline } = useNetworkStatus();
   const [mealType, setMealType] = useState('');
   const [hungerRating, setHungerRating] = useState(3);
   const [satisfactionRating, setSatisfactionRating] = useState(3);
@@ -58,6 +61,15 @@ export default function CheckInScreen() {
   };
 
   const handleSubmit = async () => {
+    // Verificar conexão com internet
+    if (isOffline) {
+      Alert.alert(
+        'Sem conexão',
+        'Você precisa estar conectado à internet para registrar um check-in.'
+      );
+      return;
+    }
+
     // Validação de campos obrigatórios
     if (!mealType.trim()) {
       setRequiredField('Tipo de Refeição');
@@ -94,7 +106,11 @@ export default function CheckInScreen() {
           <Text style={styles.subtitle}>Registre sua refeição</Text>
         </View>
 
-        <Card style={styles.formCard}>
+        {isOffline ? (
+          <OfflineMessage />
+        ) : (
+          <>
+            <Card style={styles.formCard}>
           <MealTypeSelector
             value={mealType}
             onValueChange={setMealType}
@@ -174,6 +190,8 @@ export default function CheckInScreen() {
           <Text style={styles.tipText}>• Adicione observações sobre como se sentiu</Text>
           <Text style={styles.tipText}>• Registre imediatamente após a refeição</Text>
         </Card>
+          </>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );

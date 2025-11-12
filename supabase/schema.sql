@@ -19,24 +19,31 @@ alter table public.competitions
 alter table public.profiles enable row level security;
 
 -- SELECT: Users can view their own profile
+-- Using simple comparison to avoid recursion
 drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own" on public.profiles
-  for select using ( id = auth.uid() );
+  for select 
+  using ( id = auth.uid() );
 
 -- INSERT: Users can create their own profile (used by trigger)
 drop policy if exists "profiles_insert_own" on public.profiles;
 create policy "profiles_insert_own" on public.profiles
-  for insert with check ( id = auth.uid() );
+  for insert 
+  with check ( id = auth.uid() );
 
 -- UPDATE: Users can update their own profile
+-- Simplified to avoid any potential recursion
 drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own" on public.profiles
-  for update using ( id = auth.uid() ) with check ( id = auth.uid() );
+  for update 
+  using ( id = auth.uid() ) 
+  with check ( id = auth.uid() );
 
 -- DELETE: Users can delete their own profile
 drop policy if exists "profiles_delete_own" on public.profiles;
 create policy "profiles_delete_own" on public.profiles
-  for delete using ( id = auth.uid() );
+  for delete 
+  using ( id = auth.uid() );
 
 -- Auto-create profile on new auth user (supports email confirmation ON)
 -- Note: SECURITY DEFINER allows the trigger to bypass RLS policies

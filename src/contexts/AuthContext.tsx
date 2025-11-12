@@ -79,18 +79,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     // Backfill name from auth metadata if missing
+    // Note: We don't update here to avoid RLS recursion issues
+    // The trigger handle_user_updated will sync this automatically
     let name = profile.name || '';
     if (!name) {
-      const metaName = (authUser.user_metadata as any)?.name || (authUser.user_metadata as any)?.full_name;
-      if (metaName) {
-        const { error: upErr } = await supabase
-          .from('profiles')
-          .update({ name: metaName, updated_at: new Date().toISOString() })
-          .eq('id', authUser.id);
-        if (!upErr) {
-          name = metaName;
-        }
-      }
+      name = (authUser.user_metadata as any)?.name || (authUser.user_metadata as any)?.full_name || '';
     }
 
     const user: User = {
