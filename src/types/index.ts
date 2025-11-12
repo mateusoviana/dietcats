@@ -80,6 +80,7 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (data: { name: string; email: string }) => Promise<void>;
 }
 
 export interface RegisterData {

@@ -19,57 +19,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log('🚀 [DEBUG] AuthProvider useEffect INICIADO');
-    console.log('🌍 [DEBUG] Platform:', Platform.OS);
+    checkAuthState();
     
-    // On web, ensure we exchange any OAuth code in URL into a session (robust fallback)
-    const maybeExchange = async () => {
-      try {
-        if (Platform.OS === 'web') {
-          console.log('🌐 [DEBUG] Tentando exchangeCodeForSession...');
-          
-          // Add timeout
-          const timeout = new Promise((_, reject) => 
-            setTimeout(() => {
-              console.log('⏱️ [DEBUG] exchangeCodeForSession TIMEOUT após 3s');
-              reject(new Error('exchangeCodeForSession timeout'));
-            }, 3000)
-          );
-          
-          await Promise.race([
-            supabase.auth.exchangeCodeForSession(window.location.href),
-            timeout
-          ]);
-          console.log('✅ [DEBUG] exchangeCodeForSession completado');
-        } else {
-          console.log('📱 [DEBUG] Not web, skipping exchange');
-        }
-      } catch (e) {
-        console.log('⚠️ [DEBUG] exchangeCodeForSession error (pode ser normal):', e);
-      }
-    };
-
-    console.log('🔄 [DEBUG] Chamando maybeExchange...');
-    maybeExchange().finally(() => {
-      console.log('✅ [DEBUG] maybeExchange finalizado, chamando checkAuthState...');
-      checkAuthState();
-    });
-    
-    // Listen to auth changes - use session data directly instead of calling getSession again
-    const { data: sub } = supabaseToUse.auth.onAuthStateChange(async (event: any, session: any) => {
-      console.log('🔔 [DEBUG] Auth state changed:', event);
-      
-      // Only handle SIGNED_IN and SIGNED_OUT events
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ [DEBUG] User signed in, creating profile from session');
-        const authUser = session.user;
-        const profileUser: User = {
-          id: authUser.id,
-          email: authUser.email || '',
-          name: (authUser.user_metadata as any)?.name || '',
-          userType: (authUser.user_metadata as any)?.user_type || 'patient',
-          createdAt: authUser.created_at || new Date().toISOString(),
-        };
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const profileUser = await loadCurrentUser();
         setUser(profileUser);
       } else if (event === 'SIGNED_OUT') {
         console.log('❌ [DEBUG] User signed out');
@@ -154,9 +108,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (email: string, password: string) => {
     try {
-      setIsLoading(true);
-      console.log('🔐 [DEBUG] Login iniciado...');
-      const { data, error } = await supabaseToUse.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       
       console.log('✅ [DEBUG] Login bem-sucedido, pegando usuário da resposta...');
@@ -186,13 +138,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('❌ [DEBUG] Erro no login:', error);
       throw error;
     } finally {
-      setIsLoading(false);
     }
   };
 
   const register = async (userData: RegisterData) => {
     try {
-      setIsLoading(true);
       const { email, password, name, userType } = userData;
 
       const redirectTo = typeof window !== 'undefined' && (window as any).location
@@ -228,18 +178,72 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     } catch (error) {
       throw error;
-    } finally {
-      setIsLoading(false);
-    }
+    } 
   };
+
+    // --- NOVA FUNÇÃO ADICIONADA ---
+  const updateProfile = async (data: { name: string; email: string }) => {
+    if (!user) throw new Error("Usuário não está logado");
+
+    const { name, email } = data;
+    
+    // 1. Atualizar o email no Supabase Auth (se mudou)
+    // Isso (geralmente) envia um email de confirmação
+    if (email && email.toLowerCase() !== user.email.toLowerCase()) {
+      const { error: authError } = await supabase.auth.updateUser({ email });
+      if (authError) {
+        throw new Error(`Falha ao atualizar email: ${authError.message}`);
+      }
+      // Nota: O email no 'user' só será atualizado após a confirmação.
+      // Por agora, vamos atualizar o estado local
+    }
+
+    // 2. Atualizar o nome na tabela 'profiles' (se mudou)
+    if (name && name !== user.name) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ name: name, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
+      
+      if (profileError) {
+        throw new Error(`Falha ao atualizar nome: ${profileError.message}`);
+      }
+    }
+
+    // 3. Atualizar o estado local para reflexo imediato na UI
+    const updatedUser: User = {
+      ...user,
+      name: name || user.name,
+      email: email || user.email, // Atualiza localmente, mesmo que a confirmação esteja pendente
+    };
+    
+    setUser(updatedUser);
+    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+  // --- FIM DA NOVA FUNÇÃO ---
 
   const logout = async () => {
     try {
-      await supabaseToUse.auth.signOut();
-      await AsyncStorage.removeItem('user');
+      console.log('Logout iniciado');
+      setIsLoading(true);
+      
+      // Set user to null immediately to trigger navigation reset
       setUser(null);
+      
+      // Then sign out from Supabase
+      await supabase.auth.signOut();
+      await AsyncStorage.removeItem('user');
+      
+      console.log('Logout concluído');
+      
+      // Small delay to ensure state is updated before navigation resets
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
       console.error('Error logging out:', error);
+      // Ensure user is set to null even if there's an error
+      setUser(null);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -249,6 +253,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     register,
     logout,
+    updateProfile, 
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
