@@ -9,17 +9,44 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import { mealService } from '../../services/MealService';
 
 export default function HomeScreen() {
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [checkInCount, setCheckInCount] = useState(0);
 
-  const onRefresh = React.useCallback(() => {
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      const checkIns = await mealService.getMyCheckIns();
+      setCheckInCount(checkIns.length);
+      
+      // Calcular pontos totais: soma de todas as estrelas (ratings)
+      const total = checkIns.reduce((sum, checkIn) => {
+        const checkInPoints = 
+          (checkIn.hungerRating || 0) + 
+          (checkIn.satietyRating || 0) + 
+          (checkIn.satisfactionRating || 0);
+        return sum + checkInPoints;
+      }, 0);
+      
+      setTotalPoints(total);
+    } catch (error) {
+      console.error('Erro ao carregar estatísticas:', error);
+      setTotalPoints(0);
+      setCheckInCount(0);
+    }
+  };
+
+  const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    // Simular carregamento de dados
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    await loadStats();
+    setRefreshing(false);
   }, []);
 
   const getGreeting = () => {
@@ -60,11 +87,11 @@ export default function HomeScreen() {
           <Text style={styles.statsTitle}>Hoje</Text>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>0</Text>
-              <Text style={styles.statLabel}>Refeições</Text>
+              <Text style={styles.statNumber}>{checkInCount}</Text>
+              <Text style={styles.statLabel}>Check-ins</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>0</Text>
+              <Text style={styles.statNumber}>{totalPoints}</Text>
               <Text style={styles.statLabel}>Pontos</Text>
             </View>
             <View style={styles.statItem}>
