@@ -11,26 +11,21 @@ import {
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
-import RatingSelector from '../../components/RatingSelector';
+import MealTypeSelector from '../../components/MealTypeSelector';
+import PlateRating from '../../components/PlateRating';
+import CatSatisfactionSlider from '../../components/CatSatisfactionSlider';
+import TagSelector from '../../components/TagSelector';
+import PhotoSelector from '../../components/PhotoSelector';
 import { mealService } from '../../services/MealService';
 
 export default function CheckInScreen() {
   const [mealType, setMealType] = useState('');
   const [hungerRating, setHungerRating] = useState(3);
-  const [satietyRating, setSatietyRating] = useState(3);
   const [satisfactionRating, setSatisfactionRating] = useState(3);
-  const [tag, setTag] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [observations, setObservations] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const mealTypes = [
-    'Café da Manhã',
-    'Lanche da Manhã',
-    'Almoço',
-    'Lanche da Tarde',
-    'Jantar',
-    'Ceia',
-  ];
 
   const handleSubmit = async () => {
     if (!mealType.trim()) {
@@ -43,18 +38,18 @@ export default function CheckInScreen() {
       await mealService.addCheckIn({
         mealType: mealType.trim(),
         hungerRating,
-        satietyRating,
         satisfactionRating,
-        tag: tag.trim() || undefined,
+        tag: tags.join(', ') || undefined,
+        photo: photoUri || undefined,
         observations: observations.trim() || undefined,
       });
       Alert.alert('Sucesso!', 'Check-in registrado com sucesso!');
       // Reset form
       setMealType('');
       setHungerRating(3);
-      setSatietyRating(3);
       setSatisfactionRating(3);
-      setTag('');
+      setTags([]);
+      setPhotoUri(null);
       setObservations('');
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar o check-in');
@@ -75,37 +70,34 @@ export default function CheckInScreen() {
         </View>
 
         <Card style={styles.formCard}>
-          <Input
-            label="Tipo de Refeição"
+          <MealTypeSelector
             value={mealType}
-            onChangeText={setMealType}
-            placeholder="Ex: Café da Manhã, Almoço..."
-            error={!mealType.trim() ? 'Campo obrigatório' : undefined}
+            onValueChange={setMealType}
           />
+          {!mealType.trim() && (
+            <Text style={styles.errorText}>Por favor, selecione o tipo de refeição</Text>
+          )}
 
-          <RatingSelector
-            label="Nível de Fome (1 = com muita fome, 5 = sem fome)"
+          <PlateRating
+            label="🍽️ Nível de Fome"
             value={hungerRating}
             onValueChange={setHungerRating}
           />
 
-          <RatingSelector
-            label="Nível de Saciedade (1 = ainda com fome, 5 = muito satisfeito)"
-            value={satietyRating}
-            onValueChange={setSatietyRating}
-          />
-
-          <RatingSelector
-            label="Satisfação com a Refeição (1 = muito insatisfeito, 5 = muito satisfeito)"
+          <CatSatisfactionSlider
+            label="🐱 Satisfação com a Refeição"
             value={satisfactionRating}
             onValueChange={setSatisfactionRating}
           />
 
-          <Input
-            label="Tag (opcional)"
-            value={tag}
-            onChangeText={setTag}
-            placeholder="Ex: saudável, cheat meal, vegetariano..."
+          <PhotoSelector
+            photoUri={photoUri}
+            onPhotoChange={setPhotoUri}
+          />
+
+          <TagSelector
+            selectedTags={tags}
+            onTagsChange={setTags}
           />
 
           <Input
@@ -153,7 +145,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C',
   },
   title: {
     fontSize: 24,
@@ -163,7 +155,13 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#E8F5E8',
+    color: '#D8F3DC',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#F44336',
+    marginTop: -8,
+    marginBottom: 12,
   },
   formCard: {
     margin: 16,
@@ -183,7 +181,7 @@ const styles = StyleSheet.create({
   tipsTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#40916C',
     marginBottom: 12,
   },
   tipText: {

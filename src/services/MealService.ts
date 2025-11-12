@@ -1,5 +1,6 @@
 import supabase from '../lib/supabase';
 import { MealCheckIn } from '../types';
+import { StorageService } from './StorageService';
 
 export type NewMealCheckIn = {
   mealType: string;
@@ -43,13 +44,26 @@ export class MealService {
     const { data: sessionData } = await supabase.auth.getSession();
     const uid = sessionData.session?.user?.id;
     if (!uid) throw new Error('Não autenticado');
+
+    // Upload photo if it exists and is a local file
+    let photoUrl = input.photo ?? null;
+    if (input.photo) {
+      try {
+        photoUrl = await StorageService.uploadPhoto(input.photo, uid);
+      } catch (error) {
+        console.error('Photo upload failed:', error);
+        // Continue without photo if upload fails
+        photoUrl = null;
+      }
+    }
+
     const payload = {
       patient_id: uid,
       meal_type: input.mealType,
       timestamp: input.timestamp ?? new Date().toISOString(),
-      photo_url: input.photo ?? null,
+      photo_url: photoUrl,
       hunger_rating: input.hungerRating ?? null,
-      satiety_rating: input.satietyRating ?? null,
+      satiety_rating: null, // Campo removido da UI, sempre null
       satisfaction_rating: input.satisfactionRating ?? null,
       tag: input.tag ?? null,
       observations: input.observations ?? null,
@@ -64,18 +78,73 @@ export class MealService {
   }
 
   async deleteCheckIn(id: string): Promise<void> {
+    // Get the check-in to delete its photo
+    const { data: checkIn } = await supabase
+      .from('meal_check_ins')
+      .select('photo_url')
+      .eq('id', id)
+      .single();
+
+    // Delete the check-in from database
     const { error } = await supabase.from('meal_check_ins').delete().eq('id', id);
     if (error) throw error;
+
+    // Delete the photo from storage if it exists
+    if (checkIn?.photo_url) {
+      await StorageService.deletePhoto(checkIn.photo_url);
+    }
   }
 
   async updateCheckIn(
     id: string,
     input: Partial<NewMealCheckIn>
   ): Promise<MealCheckIn> {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const uid = sessionData.session?.user?.id;
+    if (!uid) throw new Error('Não autenticado');
+
     const payload: any = {};
     if (input.mealType !== undefined) payload.meal_type = input.mealType;
     if (input.timestamp !== undefined) payload.timestamp = input.timestamp;
-    if (input.photo !== undefined) payload.photo_url = input.photo;
+    
+    // Handle photo update
+    if (input.photo !== undefined) {
+      if (input.photo) {
+        try {
+          // Upload new photo
+          const newPhotoUrl = await StorageService.uploadPhoto(input.photo, uid);
+          payload.photo_url = newPhotoUrl;
+
+          // Delete old photo if it exists
+          const { data: oldCheckIn } = await supabase
+            .from('meal_check_ins')
+            .select('photo_url')
+            .eq('id', id)
+            .single();
+          
+          if (oldCheckIn?.photo_url && oldCheckIn.photo_url !== newPhotoUrl) {
+            await StorageService.deletePhoto(oldCheckIn.photo_url);
+          }
+        } catch (error) {
+          console.error('Photo upload failed:', error);
+        }
+      } else {
+        // User wants to remove photo
+        payload.photo_url = null;
+        
+        // Delete old photo
+        const { data: oldCheckIn } = await supabase
+          .from('meal_check_ins')
+          .select('photo_url')
+          .eq('id', id)
+          .single();
+        
+        if (oldCheckIn?.photo_url) {
+          await StorageService.deletePhoto(oldCheckIn.photo_url);
+        }
+      }
+    }
+    
     if (input.hungerRating !== undefined) payload.hunger_rating = input.hungerRating;
     if (input.satietyRating !== undefined) payload.satiety_rating = input.satietyRating;
     if (input.satisfactionRating !== undefined)

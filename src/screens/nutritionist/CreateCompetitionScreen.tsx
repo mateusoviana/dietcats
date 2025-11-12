@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C', // primary.500
   },
   title: {
     fontSize: 24,
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#E8F5E8',
+    color: '#D8F3DC', // primary.50
   },
   formCard: {
     margin: 16,
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
   scoringTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#40916C', // primary.500
     marginBottom: 8,
   },
   scoringDescription: {
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   scoringValue: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#52B788', // primary.400
   },
   createButton: {
     marginTop: 24,

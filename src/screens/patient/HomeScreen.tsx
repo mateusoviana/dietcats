@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C', // primary.500
   },
   greeting: {
     fontSize: 24,
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#E8F5E8',
+    color: '#D8F3DC', // primary.50
   },
   content: {
     padding: 16,
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   welcomeTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#40916C', // primary.500
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#52B788', // primary.400
   },
   statLabel: {
     fontSize: 14,

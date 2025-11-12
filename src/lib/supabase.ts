@@ -9,16 +9,35 @@ const extra = (Constants.expoConfig || (Constants as any).manifest)?.extra || {}
 export const SUPABASE_URL: string | undefined = extra?.SUPABASE_URL;
 export const SUPABASE_ANON_KEY: string | undefined = extra?.SUPABASE_ANON_KEY;
 
+console.log('🔧 [DEBUG] Supabase lib loaded - Time:', new Date().toISOString());
+console.log('🔧 [DEBUG] Extra config:', {
+  hasExtra: !!extra,
+  extraKeys: Object.keys(extra),
+});
+console.log('🔧 [DEBUG] URL check:', {
+  hasUrl: !!SUPABASE_URL,
+  urlValue: SUPABASE_URL,
+  urlLength: SUPABASE_URL?.length,
+  urlType: typeof SUPABASE_URL,
+  urlStartsWith: SUPABASE_URL?.substring(0, 10),
+});
+console.log('🔧 [DEBUG] Key check:', {
+  hasKey: !!SUPABASE_ANON_KEY,
+  keyLength: SUPABASE_ANON_KEY?.length,
+  keyType: typeof SUPABASE_ANON_KEY,
+  keyPrefix: SUPABASE_ANON_KEY?.substring(0, 20) + '...',
+});
+
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  // In development, it's helpful to log a warning if keys are missing
-  console.warn(
-    'Supabase keys are not set. Add SUPABASE_URL and SUPABASE_ANON_KEY to app.json -> expo.extra.'
-  );
+  console.warn('⚠️ [DEBUG] Supabase keys are not set!');
+} else {
+  console.log('✅ [DEBUG] Supabase credentials present');
 }
+
+console.log('🏗️ [DEBUG] Creating Supabase client - Platform:', Platform.OS);
 
 export const supabase = createClient(SUPABASE_URL || '', SUPABASE_ANON_KEY || '', {
   auth: {
-    // Use AsyncStorage only on native; on web, let supabase use localStorage
     storage: Platform.OS === 'web' ? undefined : AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
@@ -26,5 +45,7 @@ export const supabase = createClient(SUPABASE_URL || '', SUPABASE_ANON_KEY || ''
     flowType: Platform.OS === 'web' ? 'implicit' : 'pkce',
   },
 });
+
+console.log('✅ [DEBUG] Supabase client created successfully');
 
 export default supabase;

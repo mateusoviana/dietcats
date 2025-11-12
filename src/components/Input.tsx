@@ -122,6 +122,6 @@ const styles = StyleSheet.create({
     borderColor: '#F44336',
   },
   focusedContainer: {
-    borderColor: '#4CAF50',
+    borderColor: '#40916C', // primary.500
   },
 });

@@ -1,134 +1,141 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Patient, Nutritionist, MealCheckIn, Competition } from '../types';
+import { supabase } from '../lib/supabase';
+import * as FileSystem from 'expo-file-system';
+import { decode } from 'base64-arraybuffer';
+import { Platform } from 'react-native';
 
-class StorageService {
-  // User Data
-  async saveUser(user: Patient | Nutritionist): Promise<void> {
+export class StorageService {
+  private static BUCKET_NAME = 'meal-photos';
+
+  /**
+   * Initializes the storage bucket (call once on app start or setup)
+   */
+  static async initializeBucket(): Promise<void> {
     try {
-      await AsyncStorage.setItem('user', JSON.stringify(user));
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const exists = buckets?.some(b => b.name === this.BUCKET_NAME);
+      
+      if (!exists) {
+        await supabase.storage.createBucket(this.BUCKET_NAME, {
+          public: true,
+          fileSizeLimit: 5242880, // 5MB
+          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'],
+        });
+      }
     } catch (error) {
-      console.error('Error saving user:', error);
-      throw error;
+      console.error('Error initializing storage bucket:', error);
     }
   }
 
-  async getUser(): Promise<Patient | Nutritionist | null> {
+  /**
+   * Uploads a photo and returns the public URL
+   * @param uri - Local file URI or remote URL
+   * @param userId - User ID for organizing files
+   * @returns Public URL of the uploaded photo or the original URL if it's already remote
+   */
+  static async uploadPhoto(uri: string, userId: string): Promise<string> {
     try {
-      const userData = await AsyncStorage.getItem('user');
-      return userData ? JSON.parse(userData) : null;
+      // If it's already a URL from internet, return as-is
+      if (uri.startsWith('http://') || uri.startsWith('https://')) {
+        return uri;
+      }
+
+      // Generate unique filename
+      const timestamp = Date.now();
+      const fileExt = uri.split('.').pop() || 'jpg';
+      const fileName = `${userId}/${timestamp}.${fileExt}`;
+
+      let arrayBuffer: ArrayBuffer;
+
+      // Different handling for web vs mobile
+      if (Platform.OS === 'web') {
+        // Web: Convert blob URL to blob
+        arrayBuffer = await this.getBlobFromUri(uri);
+      } else {
+        // Mobile: Read as base64 and convert
+        const base64 = await FileSystem.readAsStringAsync(uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        arrayBuffer = decode(base64);
+      }
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from(this.BUCKET_NAME)
+        .upload(fileName, arrayBuffer, {
+          contentType: `image/${fileExt}`,
+          upsert: false,
+        });
+
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from(this.BUCKET_NAME)
+        .getPublicUrl(data.path);
+
+      return urlData.publicUrl;
     } catch (error) {
-      console.error('Error getting user:', error);
-      return null;
+      console.error('Error uploading photo:', error);
+      throw new Error('Falha ao fazer upload da foto');
     }
   }
 
-  async clearUser(): Promise<void> {
+  /**
+   * Web-specific: Convert blob URL to ArrayBuffer
+   */
+  private static async getBlobFromUri(blobUrl: string): Promise<ArrayBuffer> {
+    const response = await fetch(blobUrl);
+    const blob = await response.blob();
+    return await blob.arrayBuffer();
+  }
+
+  /**
+   * Deletes a photo from storage
+   * @param photoUrl - Full URL of the photo
+   */
+  static async deletePhoto(photoUrl: string): Promise<void> {
     try {
-      await AsyncStorage.removeItem('user');
+      // Only delete if it's from our storage
+      if (!photoUrl.includes(this.BUCKET_NAME)) {
+        return;
+      }
+
+      // Extract path from URL
+      const urlParts = photoUrl.split(`${this.BUCKET_NAME}/`);
+      if (urlParts.length < 2) return;
+
+      const filePath = urlParts[1].split('?')[0]; // Remove query params
+
+      await supabase.storage
+        .from(this.BUCKET_NAME)
+        .remove([filePath]);
     } catch (error) {
-      console.error('Error clearing user:', error);
+      console.error('Error deleting photo:', error);
+      // Don't throw - deletion failure shouldn't block other operations
     }
   }
 
-  // Meal Check-ins
-  async saveMealCheckIn(checkIn: MealCheckIn): Promise<void> {
+  /**
+   * Gets the size of a user's photos in bytes
+   */
+  static async getUserStorageSize(userId: string): Promise<number> {
     try {
-      const existingCheckIns = await this.getMealCheckIns();
-      const updatedCheckIns = [...existingCheckIns, checkIn];
-      await AsyncStorage.setItem('mealCheckIns', JSON.stringify(updatedCheckIns));
-    } catch (error) {
-      console.error('Error saving meal check-in:', error);
-      throw error;
-    }
-  }
+      const { data, error } = await supabase.storage
+        .from(this.BUCKET_NAME)
+        .list(userId);
 
-  async getMealCheckIns(): Promise<MealCheckIn[]> {
-    try {
-      const checkInsData = await AsyncStorage.getItem('mealCheckIns');
-      return checkInsData ? JSON.parse(checkInsData) : [];
-    } catch (error) {
-      console.error('Error getting meal check-ins:', error);
-      return [];
-    }
-  }
+      if (error) throw error;
 
-  async getMealCheckInsByPatient(patientId: string): Promise<MealCheckIn[]> {
-    try {
-      const allCheckIns = await this.getMealCheckIns();
-      return allCheckIns.filter(checkIn => checkIn.patientId === patientId);
+      return data?.reduce((total, file) => total + (file.metadata?.size || 0), 0) || 0;
     } catch (error) {
-      console.error('Error getting meal check-ins by patient:', error);
-      return [];
-    }
-  }
-
-  // Competitions
-  async saveCompetition(competition: Competition): Promise<void> {
-    try {
-      const existingCompetitions = await this.getCompetitions();
-      const updatedCompetitions = [...existingCompetitions, competition];
-      await AsyncStorage.setItem('competitions', JSON.stringify(updatedCompetitions));
-    } catch (error) {
-      console.error('Error saving competition:', error);
-      throw error;
-    }
-  }
-
-  async getCompetitions(): Promise<Competition[]> {
-    try {
-      const competitionsData = await AsyncStorage.getItem('competitions');
-      return competitionsData ? JSON.parse(competitionsData) : [];
-    } catch (error) {
-      console.error('Error getting competitions:', error);
-      return [];
-    }
-  }
-
-  async getCompetitionsByNutritionist(nutritionistId: string): Promise<Competition[]> {
-    try {
-      const allCompetitions = await this.getCompetitions();
-      return allCompetitions.filter(competition => competition.nutritionistId === nutritionistId);
-    } catch (error) {
-      console.error('Error getting competitions by nutritionist:', error);
-      return [];
-    }
-  }
-
-  // Generic storage methods
-  async saveData(key: string, data: any): Promise<void> {
-    try {
-      await AsyncStorage.setItem(key, JSON.stringify(data));
-    } catch (error) {
-      console.error(`Error saving data for key ${key}:`, error);
-      throw error;
-    }
-  }
-
-  async getData(key: string): Promise<any> {
-    try {
-      const data = await AsyncStorage.getItem(key);
-      return data ? JSON.parse(data) : null;
-    } catch (error) {
-      console.error(`Error getting data for key ${key}:`, error);
-      return null;
-    }
-  }
-
-  async removeData(key: string): Promise<void> {
-    try {
-      await AsyncStorage.removeItem(key);
-    } catch (error) {
-      console.error(`Error removing data for key ${key}:`, error);
-    }
-  }
-
-  async clearAllData(): Promise<void> {
-    try {
-      await AsyncStorage.clear();
-    } catch (error) {
-      console.error('Error clearing all data:', error);
+      console.error('Error getting storage size:', error);
+      return 0;
     }
   }
 }
 
-export const storageService = new StorageService();
+
+

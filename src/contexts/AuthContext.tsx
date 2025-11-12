@@ -2,7 +2,11 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContextType, User, RegisterData } from '../types';
 import supabase from '../lib/supabase';
+import debugSupabase from '../lib/supabaseDebug';
 import { Platform } from 'react-native';
+
+// Use debug version temporarily
+const supabaseToUse = debugSupabase as any;
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -15,25 +19,63 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🚀 [DEBUG] AuthProvider useEffect INICIADO');
+    console.log('🌍 [DEBUG] Platform:', Platform.OS);
+    
     // On web, ensure we exchange any OAuth code in URL into a session (robust fallback)
     const maybeExchange = async () => {
       try {
         if (Platform.OS === 'web') {
-          await supabase.auth.exchangeCodeForSession(window.location.href);
+          console.log('🌐 [DEBUG] Tentando exchangeCodeForSession...');
+          
+          // Add timeout
+          const timeout = new Promise((_, reject) => 
+            setTimeout(() => {
+              console.log('⏱️ [DEBUG] exchangeCodeForSession TIMEOUT após 3s');
+              reject(new Error('exchangeCodeForSession timeout'));
+            }, 3000)
+          );
+          
+          await Promise.race([
+            supabase.auth.exchangeCodeForSession(window.location.href),
+            timeout
+          ]);
+          console.log('✅ [DEBUG] exchangeCodeForSession completado');
+        } else {
+          console.log('📱 [DEBUG] Not web, skipping exchange');
         }
-      } catch {}
+      } catch (e) {
+        console.log('⚠️ [DEBUG] exchangeCodeForSession error (pode ser normal):', e);
+      }
     };
 
+    console.log('🔄 [DEBUG] Chamando maybeExchange...');
     maybeExchange().finally(() => {
+      console.log('✅ [DEBUG] maybeExchange finalizado, chamando checkAuthState...');
       checkAuthState();
     });
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const profileUser = await loadCurrentUser();
+    
+    // Listen to auth changes - use session data directly instead of calling getSession again
+    const { data: sub } = supabaseToUse.auth.onAuthStateChange(async (event: any, session: any) => {
+      console.log('🔔 [DEBUG] Auth state changed:', event);
+      
+      // Only handle SIGNED_IN and SIGNED_OUT events
+      if (event === 'SIGNED_IN' && session?.user) {
+        console.log('✅ [DEBUG] User signed in, creating profile from session');
+        const authUser = session.user;
+        const profileUser: User = {
+          id: authUser.id,
+          email: authUser.email || '',
+          name: (authUser.user_metadata as any)?.name || '',
+          userType: (authUser.user_metadata as any)?.user_type || 'patient',
+          createdAt: authUser.created_at || new Date().toISOString(),
+        };
         setUser(profileUser);
-      } else {
+      } else if (event === 'SIGNED_OUT') {
+        console.log('❌ [DEBUG] User signed out');
         setUser(null);
       }
+      // Ignore other events like TOKEN_REFRESHED, USER_UPDATED to avoid unnecessary calls
     });
     return () => {
       sub.subscription.unsubscribe();
@@ -41,8 +83,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const checkAuthState = async () => {
+    console.log('🔍 [DEBUG] checkAuthState - START');
     try {
-      const { data } = await supabase.auth.getSession();
+      console.log('📡 [DEBUG] Calling supabaseToUse.auth.getSession...');
+      const { data } = await supabaseToUse.auth.getSession();
       if (data.session?.user) {
         const profileUser = await loadCurrentUser();
         setUser(profileUser);
@@ -57,7 +101,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const loadCurrentUser = async (): Promise<User | null> => {
-    const { data: sessionData } = await supabase.auth.getSession();
+    console.log('👤 [DEBUG] loadCurrentUser - START');
+    const { data: sessionData } = await supabaseToUse.auth.getSession();
     const authUser = sessionData.session?.user;
     if (!authUser) return null;
 
@@ -110,14 +155,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      console.log('🔐 [DEBUG] Login iniciado...');
+      const { data, error } = await supabaseToUse.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      const profileUser = await loadCurrentUser();
-      if (profileUser) {
-        await AsyncStorage.setItem('user', JSON.stringify(profileUser));
-        setUser(profileUser);
+      
+      console.log('✅ [DEBUG] Login bem-sucedido, pegando usuário da resposta...');
+      const authUser = data?.user;
+      
+      if (!authUser) {
+        console.log('❌ [DEBUG] Nenhum usuário na resposta do login');
+        throw new Error('No user in login response');
       }
+      
+      console.log('👤 [DEBUG] Usuário autenticado:', authUser.email);
+      
+      // Create user object from auth response without calling getSession
+      const profileUser: User = {
+        id: authUser.id,
+        email: authUser.email || email,
+        name: (authUser.user_metadata as any)?.name || '',
+        userType: (authUser.user_metadata as any)?.user_type || 'patient',
+        createdAt: authUser.created_at || new Date().toISOString(),
+      };
+      
+      console.log('💾 [DEBUG] Salvando usuário:', profileUser);
+      await AsyncStorage.setItem('user', JSON.stringify(profileUser));
+      setUser(profileUser);
+      console.log('✅ [DEBUG] Login completo!');
     } catch (error) {
+      console.error('❌ [DEBUG] Erro no login:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -133,7 +199,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         ? (window as any).location.origin
         : 'dietcats://auth/callback';
 
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await supabaseToUse.auth.signUp({
         email,
         password,
         options: {
@@ -144,12 +210,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (error) throw error;
 
       // If email confirmation is disabled, a session exists and profile is created via trigger.
-      if (data.session) {
-        const profileUser = await loadCurrentUser();
-        if (profileUser) {
-          await AsyncStorage.setItem('user', JSON.stringify(profileUser));
-          setUser(profileUser);
-        }
+      if (data.session && data.user) {
+        console.log('✅ [DEBUG] Register bem-sucedido, criando usuário...');
+        
+        const profileUser: User = {
+          id: data.user.id,
+          email: data.user.email || email,
+          name: name,
+          userType: userType,
+          createdAt: data.user.created_at || new Date().toISOString(),
+        };
+        
+        console.log('💾 [DEBUG] Salvando usuário registrado:', profileUser);
+        await AsyncStorage.setItem('user', JSON.stringify(profileUser));
+        setUser(profileUser);
+        console.log('✅ [DEBUG] Register completo!');
       }
     } catch (error) {
       throw error;
@@ -160,7 +235,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = async () => {
     try {
-      await supabase.auth.signOut();
+      await supabaseToUse.auth.signOut();
       await AsyncStorage.removeItem('user');
       setUser(null);
     } catch (error) {
