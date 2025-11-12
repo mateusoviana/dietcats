@@ -31,9 +31,11 @@ export class MealService {
   async getMyCheckIns(): Promise<MealCheckIn[]> {
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session?.user) throw new Error('Não autenticado');
+    const uid = sessionData.session.user.id;
     const { data, error } = await supabase
       .from('meal_check_ins')
       .select('*')
+      .eq('patient_id', uid)
       .order('timestamp', { ascending: false });
     if (error) throw error;
     return (data || []).map(fromDB);

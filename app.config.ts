@@ -31,12 +31,25 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       package: 'com.dietcats.app',
       versionCode: 1,
+      permissions: [
+        'NOTIFICATIONS',
+        'SCHEDULE_EXACT_ALARM',
+        'USE_EXACT_ALARM',
+      ],
     },
     web: {
       favicon: './assets/images/favicon.png',
     },
     plugins: [
       'expo-image-picker',
+      [
+        'expo-notifications',
+        {
+          icon: './assets/images/dietcats_icon.png',
+          color: '#4CAF50',
+          sounds: [],
+        },
+      ],
     ],
     extra: {
       SUPABASE_URL,

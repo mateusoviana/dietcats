@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import * as SplashScreen from 'expo-splash-screen';
+import { notificationService } from './src/services/NotificationService';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -28,6 +29,9 @@ export default function App() {
   useEffect(() => {
     async function prepare() {
       try {
+        // Solicitar permissões de notificação
+        await notificationService.requestPermissions();
+        
         // You can load fonts, make API calls, etc. here
         await new Promise((resolve) => setTimeout(resolve, 300));
       } catch (e) {
