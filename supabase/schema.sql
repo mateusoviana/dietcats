@@ -54,16 +54,20 @@ drop policy if exists "profiles_select_public" on public.profiles;
 create policy "profiles_select_public" on public.profiles
   for select using (auth.uid() is not null);
 
+-- INSERT: Users can create their own profile (used by trigger)
 drop policy if exists "profiles_insert_own" on public.profiles;
 create policy "profiles_insert_own" on public.profiles
   for insert with check (id = auth.uid());
 
+-- UPDATE: Users can update their own profile
+-- Simplified to avoid any potential recursion
 drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own" on public.profiles
   for update using (id = auth.uid()) with check (id = auth.uid());
 */
 
 -- Auto-create profile on new auth user (supports email confirmation ON)
+-- Note: SECURITY DEFINER allows the trigger to bypass RLS policies
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -95,6 +99,7 @@ create trigger on_auth_user_created
   for each row execute procedure public.handle_new_user();
 
 -- Keep profile in sync when user metadata or email changes
+-- Note: SECURITY DEFINER allows the trigger to bypass RLS policies
 create or replace function public.handle_user_updated()
 returns trigger
 language plpgsql
@@ -231,13 +236,20 @@ alter table public.meal_check_ins DISABLE row level security;
 /*
 alter table public.meal_check_ins enable row level security;
 
+-- SELECT: Patient can view their own check-ins
 drop policy if exists "meal_select_own" on public.meal_check_ins;
 create policy "meal_select_own" on public.meal_check_ins
   for select using ( patient_id = auth.uid() );
 
-drop policy if exists "meal_crud_own" on public.meal_check_ins;
-create policy "meal_crud_own" on public.meal_check_ins
-  for all using ( patient_id = auth.uid() ) with check ( patient_id = auth.uid() );
+-- INSERT: Patient can create their own check-ins
+drop policy if exists "meal_insert_own" on public.meal_check_ins;
+create policy "meal_insert_own" on public.meal_check_ins
+  for insert with check ( patient_id = auth.uid() );
+
+-- UPDATE: Patient can update their own check-ins
+drop policy if exists "meal_update_own" on public.meal_check_ins;
+create policy "meal_update_own" on public.meal_check_ins
+  for update using ( patient_id = auth.uid() ) with check ( patient_id = auth.uid() );
 
 drop policy if exists "meal_select_owner_competitions" on public.meal_check_ins;
 create policy "meal_select_owner_competitions" on public.meal_check_ins

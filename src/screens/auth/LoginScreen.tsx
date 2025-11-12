@@ -194,20 +194,20 @@ const styles = StyleSheet.create({
   demoContainer: {
     marginTop: 32,
     padding: 16,
-    backgroundColor: '#E8F5E8',
+    backgroundColor: '#D8F3DC', // primary.50
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#4CAF50',
+    borderColor: '#74C69D', // primary.300
   },
   demoTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#4CAF50',
+    color: '#2D6A4F', // primary.600
     marginBottom: 8,
   },
   demoText: {
     fontSize: 12,
-    color: '#2E7D32',
+    color: '#1B4332', // primary.700
     marginBottom: 4,
   },
   formErrorText: {

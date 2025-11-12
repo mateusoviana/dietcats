@@ -89,15 +89,15 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   primaryButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C', // primary.500
   },
   secondaryButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#74C69D', // primary.300
   },
   outlineButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#4CAF50',
+    borderColor: '#40916C', // primary.500
   },
   disabledButton: {
     backgroundColor: '#E0E0E0',
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   outlineText: {
-    color: '#4CAF50',
+    color: '#40916C', // primary.500
   },
   disabledText: {
     color: '#9E9E9E',

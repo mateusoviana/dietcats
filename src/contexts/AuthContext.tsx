@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContextType, User, RegisterData } from '../types';
 import supabase from '../lib/supabase';
-import { Platform } from 'react-native';
+import { Session } from '@supabase/supabase-js';
+import { MealService } from '../services/MealService';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -13,27 +14,21 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const sessionRef = useRef<Session | null>(null);
 
   useEffect(() => {
-    // On web, ensure we exchange any OAuth code in URL into a session (robust fallback)
-    const maybeExchange = async () => {
-      try {
-        if (Platform.OS === 'web') {
-          await supabase.auth.exchangeCodeForSession(window.location.href);
-        }
-      } catch {}
-    };
-
-    maybeExchange().finally(() => {
-      checkAuthState();
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const profileUser = await loadCurrentUser();
+    checkAuthState();
+    
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+      sessionRef.current = session;
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        const profileUser = await loadCurrentUser(session.user);
         setUser(profileUser);
-      } else {
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
       }
+      // Ignore TOKEN_REFRESHED and other events to avoid unnecessary calls
     });
     return () => {
       sub.subscription.unsubscribe();
@@ -43,22 +38,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const checkAuthState = async () => {
     try {
       const { data } = await supabase.auth.getSession();
+      sessionRef.current = data.session;
+      
       if (data.session?.user) {
-        const profileUser = await loadCurrentUser();
+        const profileUser = await loadCurrentUser(data.session.user);
         setUser(profileUser);
       } else {
         setUser(null);
       }
     } catch (error) {
       console.error('Error checking auth state:', error);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const loadCurrentUser = async (): Promise<User | null> => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const authUser = sessionData.session?.user;
+  const loadCurrentUser = async (authUser: any): Promise<User | null> => {
     if (!authUser) return null;
 
     const { data: profile, error } = await supabase
@@ -83,18 +79,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     // Backfill name from auth metadata if missing
+    // Note: We don't update here to avoid RLS recursion issues
+    // The trigger handle_user_updated will sync this automatically
     let name = profile.name || '';
     if (!name) {
-      const metaName = (authUser.user_metadata as any)?.name || (authUser.user_metadata as any)?.full_name;
-      if (metaName) {
-        const { error: upErr } = await supabase
-          .from('profiles')
-          .update({ name: metaName, updated_at: new Date().toISOString() })
-          .eq('id', authUser.id);
-        if (!upErr) {
-          name = metaName;
-        }
-      }
+      name = (authUser.user_metadata as any)?.name || (authUser.user_metadata as any)?.full_name || '';
     }
 
     const user: User = {
@@ -109,16 +98,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      const profileUser = await loadCurrentUser();
+      
+      if (!data.user) {
+        throw new Error('No user in login response');
+      }
+      
+      sessionRef.current = data.session;
+      
+      // Load full profile from database
+      const profileUser = await loadCurrentUser(data.user);
       if (profileUser) {
         await AsyncStorage.setItem('user', JSON.stringify(profileUser));
         setUser(profileUser);
       }
     } catch (error) {
+      console.error('Error logging in:', error);
       throw error;
-    } finally {
     }
   };
 
@@ -141,8 +138,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (error) throw error;
 
       // If email confirmation is disabled, a session exists and profile is created via trigger.
-      if (data.session) {
-        const profileUser = await loadCurrentUser();
+      if (data.session && data.user) {
+        sessionRef.current = data.session;
+        
+        const profileUser = await loadCurrentUser(data.user);
         if (profileUser) {
           await AsyncStorage.setItem('user', JSON.stringify(profileUser));
           setUser(profileUser);
@@ -196,8 +195,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = async () => {
     try {
-      console.log('Logout iniciado');
       setIsLoading(true);
+      
+      // Clear all caches
+      MealService.clearCache();
+      sessionRef.current = null;
       
       // Set user to null immediately to trigger navigation reset
       setUser(null);
@@ -205,8 +207,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Then sign out from Supabase
       await supabase.auth.signOut();
       await AsyncStorage.removeItem('user');
-      
-      console.log('Logout concluído');
       
       // Small delay to ensure state is updated before navigation resets
       await new Promise(resolve => setTimeout(resolve, 100));

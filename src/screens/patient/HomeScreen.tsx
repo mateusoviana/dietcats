@@ -6,13 +6,17 @@ import {
   ScrollView,
   RefreshControl,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../../contexts/AuthContext';
+import { PatientTabParamList } from '../../types';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import { mealService } from '../../services/MealService';
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const navigation = useNavigation<HomeScreenNavigationProp>();
   const [refreshing, setRefreshing] = useState(false);
   const [totalPoints, setTotalPoints] = useState(0);
   const [checkInCount, setCheckInCount] = useState(0);
@@ -78,7 +82,7 @@ export default function HomeScreen() {
           </Text>
           <Button
             title="Fazer Check-in"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('CheckIn')}
             style={styles.checkInButton}
           />
         </Card>
@@ -108,7 +112,7 @@ export default function HomeScreen() {
           </Text>
           <Button
             title="Ver Competições"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('Competitions')}
             variant="outline"
             style={styles.competitionsButton}
           />
@@ -134,7 +138,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C', // primary.500
   },
   greeting: {
     fontSize: 24,
@@ -144,7 +148,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#E8F5E8',
+    color: '#D8F3DC', // primary.50
   },
   content: {
     padding: 16,
@@ -156,7 +160,7 @@ const styles = StyleSheet.create({
   welcomeTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#40916C', // primary.500
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -189,7 +193,7 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#52B788', // primary.400
   },
   statLabel: {
     fontSize: 14,

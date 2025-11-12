@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Supabase Auth</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Auth Test</h1>
+    <div id="logs"></div>
+    
+    <script>
+        const SUPABASE_URL = 'https://kxlpcbcbilnqzukehfcb.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4bHBjYmNiaWxucXp1a2VoZmNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyOTYxMDQsImV4cCI6MjA3Nzg3MjEwNH0.NCPEbmyWPB-iYMY09Ti_qtXjEdf1t2H1mtTgeT4VEng';
+        
+        const logsDiv = document.getElementById('logs');
+        
+        function log(message) {
+            console.log(message);
+            logsDiv.innerHTML += '<p>' + message + '</p>';
+        }
+        
+        log('🔧 Starting test...');
+        log('URL: ' + SUPABASE_URL);
+        log('Key length: ' + SUPABASE_ANON_KEY.length);
+        
+        const { createClient } = supabase;
+        
+        log('🏗️ Creating client...');
+        const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: true,
+            }
+        });
+        
+        log('✅ Client created!');
+        
+        async function testAuth() {
+            try {
+                log('📡 Testing getSession...');
+                const start = Date.now();
+                
+                const { data, error } = await client.auth.getSession();
+                const duration = Date.now() - start;
+                
+                log('✅ getSession completed in ' + duration + 'ms');
+                log('Session: ' + (data.session ? 'Active' : 'None'));
+                if (error) {
+                    log('❌ Error: ' + error.message);
+                }
+            } catch (err) {
+                log('❌ Exception: ' + err.message);
+            }
+        }
+        
+        testAuth();
+    </script>
+</body>
+</html>
+
+
+

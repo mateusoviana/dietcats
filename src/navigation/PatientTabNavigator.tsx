@@ -33,7 +33,7 @@ export default function PatientTabNavigator() {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#4CAF50',
+        tabBarActiveTintColor: '#40916C',
         tabBarInactiveTintColor: 'gray',
         headerShown: false,
       })}
