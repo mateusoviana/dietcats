@@ -9,15 +9,21 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../../contexts/AuthContext';
 import { accountService } from '../../services/AccountService';
 import { associationService } from '../../services/AssociationService';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
+import { PatientTabParamList } from '../../types';
+
+type ProfileScreenNavigationProp = BottomTabNavigationProp<PatientTabParamList, 'Profile'>;
 
 export default function ProfileScreen() {
-   const { user, logout, updateProfile } = useAuth();
+  const { user, logout, updateProfile } = useAuth();
+  const navigation = useNavigation<ProfileScreenNavigationProp>();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -238,35 +244,11 @@ export default function ProfileScreen() {
 
   const menuItems = [
     {
-      icon: 'notifications-outline',
-      title: 'Notificações',
-      subtitle: 'Gerenciar lembretes e alertas',
-      onPress: () => {},
-    },
-    {
       icon: 'time-outline',
       title: 'Horários de Refeição',
       subtitle: 'Configurar seus horários',
-      onPress: () => {},
-    },
-    {
-      icon: 'people-outline',
-      title: 'Meu Nutricionista',
-      subtitle: 'Informações do profissional',
-      onPress: () => {},
-    },
-    {
-      icon: 'help-circle-outline',
-      title: 'Ajuda e Suporte',
-      subtitle: 'Central de ajuda',
-      onPress: () => {},
-    },
-    {
-      icon: 'information-circle-outline',
-      title: 'Sobre o App',
-      subtitle: 'Versão 1.0.0',
-      onPress: () => {},
-    },
+      onPress: () => navigation.navigate('Home', { openScheduleModal: true }),
+    }
   ];
 
   return (

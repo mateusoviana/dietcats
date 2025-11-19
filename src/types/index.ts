@@ -122,7 +122,7 @@ export type AuthStackParamList = {
 };
 
 export type PatientTabParamList = {
-  Home: undefined;
+  Home: { openScheduleModal?: boolean } | undefined;
   CheckIn: undefined;
   History: undefined;
   Competitions: undefined;

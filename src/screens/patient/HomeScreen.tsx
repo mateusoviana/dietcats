@@ -11,7 +11,7 @@ import {
   TextInput,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/Card';
@@ -22,10 +22,12 @@ import { notificationService, MealSchedule } from '../../services/NotificationSe
 import { PatientTabParamList } from '../../types';
 
 type HomeScreenNavigationProp = BottomTabNavigationProp<PatientTabParamList, 'Home'>;
+type HomeScreenRouteProp = RouteProp<PatientTabParamList, 'Home'>;
 
 export default function HomeScreen() {
   const { user } = useAuth();
   const navigation = useNavigation<HomeScreenNavigationProp>();
+  const route = useRoute<HomeScreenRouteProp>();
   const [refreshing, setRefreshing] = useState(false);
   const [totalPoints, setTotalPoints] = useState(0);
   const [checkInCount, setCheckInCount] = useState(0);
@@ -41,6 +43,17 @@ export default function HomeScreen() {
     loadStats();
     loadSchedules();
   }, []);
+
+  // Abrir modal quando receber parâmetro de navegação
+  useFocusEffect(
+    React.useCallback(() => {
+      if (route.params?.openScheduleModal) {
+        setScheduleModalVisible(true);
+        // Limpar parâmetro após abrir o modal
+        navigation.setParams({ openScheduleModal: undefined });
+      }
+    }, [route.params?.openScheduleModal, navigation])
+  );
 
   const loadSchedules = async () => {
     try {
