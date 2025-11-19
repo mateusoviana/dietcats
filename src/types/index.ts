@@ -57,6 +57,8 @@ export interface Competition {
   participants: string[]; // Patient IDs
   scoringCriteria: ScoringCriteria;
   createdAt: string;
+  updatedAt?: string;
+  allowSelfJoin?: boolean;
   isActive?: boolean; // Computed: whether competition is currently active
   scores?: CompetitionScore[]; // Optional: scores for all participants
   myScore?: CompetitionScore; // Optional: current user's score
@@ -132,4 +134,10 @@ export type NutritionistTabParamList = {
   Competitions: undefined;
   CreateCompetition: undefined;
   Profile: undefined;
+};
+
+export type NutritionistStackParamList = {
+  NutritionistTabs: undefined;
+  CompetitionDetails: { competitionId: string };
+  PatientDashboard: { patientId: string; patientName: string };
 };

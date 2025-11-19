@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,47 +9,41 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import { competitionService } from '../../services/CompetitionService';
 import { Competition } from '../../types';
 import supabase from '../../lib/supabase';
 
+type CompetitionsScreenNavigationProp = any;
+
 export default function CompetitionsScreen() {
+  const navigation = useNavigation<CompetitionsScreenNavigationProp>();
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadCompetitions();
   }, []);
+  
+  // Recarregar quando a tela receber foco
+  useFocusEffect(
+    useCallback(() => {
+      loadCompetitions();
+    }, [])
+  );
 
   const loadCompetitions = async () => {
     try {
       console.log('🔄 [CompetitionsScreen] Loading competitions...');
       
-      // Debug: verificar sessão
-      const { data: sessionData } = await supabase.auth.getSession();
-      const uid = sessionData?.session?.user?.id;
-      const email = sessionData?.session?.user?.email;
-      
-      console.log('👤 Session UID:', uid);
-      console.log('📧 Session Email:', email);
-      
       const data = await competitionService.listOwned();
       console.log('✅ [CompetitionsScreen] Loaded:', data.length, 'competitions');
-      console.log('📊 Competitions:', JSON.stringify(data, null, 2));
-      
-      // Alert visual para debug
-      Alert.alert(
-        'Debug Info',
-        `UID: ${uid}\nEmail: ${email}\nCompetições: ${data.length}`,
-        [{ text: 'OK' }]
-      );
       
       setCompetitions(data);
     } catch (e) {
       console.error('❌ [CompetitionsScreen] Error loading competitions:', e);
-      Alert.alert('Erro', String(e));
       setCompetitions([]);
     }
   };
@@ -85,7 +79,7 @@ export default function CompetitionsScreen() {
           <Text style={styles.competitionName}>{competition.name}</Text>
           <View style={[
             styles.statusBadge,
-            { backgroundColor: competition.isActive ? '#4CAF50' : '#9E9E9E' }
+            { backgroundColor: competition.isActive ? '#40916C' : '#9E9E9E' }
           ]}>
             <Text style={styles.statusBadgeText}>
               {competition.isActive ? 'ATIVA' : 'FINALIZADA'}
@@ -117,14 +111,20 @@ export default function CompetitionsScreen() {
         <View style={styles.competitionActions}>
           <Button
             title="Ver Detalhes"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('CompetitionDetails', { competitionId: competition.id })}
             variant="outline"
             style={styles.actionButton}
           />
           {competition.isActive && (
             <Button
               title="Editar"
-              onPress={() => {}}
+              onPress={() => {
+                Alert.alert(
+                  'Em Desenvolvimento',
+                  'A funcionalidade de edição estará disponível em breve!',
+                  [{ text: 'OK' }]
+                );
+              }}
               variant="outline"
               style={styles.actionButton}
             />
@@ -185,7 +185,7 @@ export default function CompetitionsScreen() {
             </Text>
             <Button
               title="Criar Competição"
-              onPress={() => {}}
+              onPress={() => navigation.navigate('CreateCompetition')}
               style={styles.createButton}
             />
           </Card>
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C',
   },
   title: {
     fontSize: 24,
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#E8F5E8',
+    color: '#D8F3DC',
   },
   scrollView: {
     flex: 1,
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   statCardNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#40916C',
     marginBottom: 4,
   },
   statCardLabel: {
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#40916C',
     marginBottom: 16,
   },
   summaryStats: {
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   summaryNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#40916C',
   },
   summaryLabel: {
     fontSize: 14,

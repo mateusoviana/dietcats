@@ -144,10 +144,10 @@ export default function ProfileScreen() {
         <Card style={styles.profileCard}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Ionicons name="person" size={40} color="#4CAF50" />
+              <Ionicons name="person" size={40} color="#40916C" />
             </View>
             <TouchableOpacity style={styles.editAvatarButton}>
-              <Ionicons name="camera" size={16} color="#4CAF50" />
+              <Ionicons name="camera" size={16} color="#40916C" />
             </TouchableOpacity>
           </View>
 
@@ -232,7 +232,7 @@ export default function ProfileScreen() {
             >
               <View style={styles.menuItemLeft}>
                 <View style={styles.menuIcon}>
-                  <Ionicons name={item.icon as any} size={24} color="#4CAF50" />
+                  <Ionicons name={item.icon as any} size={24} color="#40916C" />
                 </View>
                 <View style={styles.menuTextContainer}>
                   <Text style={styles.menuTitle}>{item.title}</Text>
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C',
   },
   title: {
     fontSize: 24,
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#E8F5E8',
+    color: '#D8F3DC',
   },
   content: {
     padding: 16,
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#E8F5E8',
+    backgroundColor: '#D8F3DC',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#4CAF50',
+    borderColor: '#40916C',
   },
   profileInfo: {
     alignItems: 'center',
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   },
   userType: {
     fontSize: 14,
-    color: '#4CAF50',
+    color: '#40916C',
     fontWeight: '500',
     marginBottom: 16,
   },
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#40916C',
     marginBottom: 4,
   },
   statLabel: {
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#E8F5E8',
+    backgroundColor: '#D8F3DC',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,

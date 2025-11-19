@@ -28,7 +28,7 @@ export default function NutritionistPatientsStackNavigator() {
           headerShown: true,
           title: 'Dashboard do Paciente',
           headerStyle: {
-            backgroundColor: '#4CAF50',
+            backgroundColor: '#40916C',
           },
           headerTintColor: '#fff',
           headerTitleStyle: {

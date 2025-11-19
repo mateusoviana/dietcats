@@ -152,7 +152,7 @@ export default function PatientsScreen() {
   };
 
   const getAdherenceColor = (rate: number) => {
-    if (rate >= 80) return '#4CAF50';
+    if (rate >= 80) return '#40916C';
     if (rate >= 60) return '#FF9800';
     return '#F44336';
   };
@@ -181,7 +181,7 @@ export default function PatientsScreen() {
         <View style={styles.patientStatus}>
           <View style={[
             styles.statusDot,
-            { backgroundColor: patient.isActive ? '#4CAF50' : '#F44336' }
+            { backgroundColor: patient.isActive ? '#40916C' : '#F44336' }
           ]} />
           <Text style={styles.statusText}>
             {patient.isActive ? 'Ativo' : 'Inativo'}
@@ -282,7 +282,7 @@ export default function PatientsScreen() {
             <View style={styles.codeContainer}>
               <Text style={styles.codeText}>{associationCode}</Text>
               <TouchableOpacity style={styles.copyButton}>
-                <Ionicons name="copy-outline" size={20} color="#4CAF50" />
+                <Ionicons name="copy-outline" size={20} color="#40916C" />
               </TouchableOpacity>
             </View>
           ) : (
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C',
   },
   title: {
     fontSize: 24,
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#E8F5E8',
+    color: '#D8F3DC',
   },
   scrollView: {
     flex: 1,
@@ -377,17 +377,17 @@ const styles = StyleSheet.create({
   codeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E8F5E8',
+    backgroundColor: '#D8F3DC',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#4CAF50',
+    borderColor: '#40916C',
   },
   codeText: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#40916C',
     marginRight: 12,
     letterSpacing: 2,
   },
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   statCardNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#40916C',
     marginBottom: 4,
   },
   statCardLabel: {
