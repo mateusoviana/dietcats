@@ -133,11 +133,6 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        <View style={styles.demoContainer}>
-          <Text style={styles.demoTitle}>Dados para teste:</Text>
-          <Text style={styles.demoText}>Paciente: paciente@teste.com / 123456</Text>
-          <Text style={styles.demoText}>Nutricionista: nutricionista@teste.com / 123456</Text>
-        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
