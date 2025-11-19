@@ -15,6 +15,7 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import { competitionService } from '../../services/CompetitionService';
 import { associationService } from '../../services/AssociationService';
+import { mealService } from '../../services/MealService';
 import { Competition, CompetitionScore, NutritionistStackParamList } from '../../types';
 
 type CompetitionDetailsRouteProp = RouteProp<NutritionistStackParamList, 'CompetitionDetails'>;
@@ -49,15 +50,75 @@ export default function CompetitionDetailsScreen() {
       }
       
       setCompetition(comp);
-      setLeaderboard(comp.scores || []);
+      
+      // Calcular pontuação padrão para cada participante
+      const scores = await calculateStandardScores(comp.participants);
+      setLeaderboard(scores);
       
       console.log('✅ Competition loaded:', comp);
-      console.log('📊 Leaderboard:', comp.scores);
+      console.log('📊 Leaderboard:', scores);
     } catch (error) {
       console.error('❌ Error loading competition:', error);
       Alert.alert('Erro', 'Não foi possível carregar a competição');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const calculateStandardScores = async (participantIds: string[]): Promise<CompetitionScore[]> => {
+    try {
+      // Buscar dados dos pacientes
+      const allPatients = await associationService.getMyPatients();
+      const patientMap = new Map(allPatients.map(p => [p.id, p.name]));
+
+      // Calcular pontuação para cada participante
+      const scoresPromises = participantIds.map(async (patientId) => {
+        try {
+          const checkIns = await mealService.getPatientCheckIns(patientId);
+          
+          // Calcular pontos totais: soma de todas as estrelas (ratings)
+          const totalPoints = checkIns.reduce((sum, checkIn) => {
+            const checkInPoints = 
+              (checkIn.hungerRating || 0) + 
+              (checkIn.satietyRating || 0) + 
+              (checkIn.satisfactionRating || 0);
+            return sum + checkInPoints;
+          }, 0);
+
+          return {
+            competitionId,
+            patientId,
+            patientName: patientMap.get(patientId) || 'Usuário',
+            score: totalPoints,
+            checkInCount: checkIns.length,
+            lastCheckInDate: checkIns[0]?.timestamp || undefined,
+          };
+        } catch (error) {
+          console.error(`Error calculating score for patient ${patientId}:`, error);
+          return {
+            competitionId,
+            patientId,
+            patientName: patientMap.get(patientId) || 'Usuário',
+            score: 0,
+            checkInCount: 0,
+          };
+        }
+      });
+
+      const scores = await Promise.all(scoresPromises);
+      
+      // Ordenar por pontuação (decrescente) e adicionar rank
+      const sortedScores = scores
+        .sort((a, b) => b.score - a.score)
+        .map((score, index) => ({
+          ...score,
+          rank: index + 1,
+        }));
+
+      return sortedScores;
+    } catch (error) {
+      console.error('Error calculating standard scores:', error);
+      return [];
     }
   };
 

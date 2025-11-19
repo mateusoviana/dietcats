@@ -77,6 +77,37 @@ export class CompetitionService {
     return mapCompetition(data);
   }
 
+  async updateCompetition(
+    competitionId: string,
+    updates: { name?: string; description?: string }
+  ): Promise<Competition> {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const uid = sessionData.session?.user?.id;
+    if (!uid) throw new Error('Não autenticado');
+
+    const payload: any = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (updates.name !== undefined) {
+      payload.name = updates.name;
+    }
+    if (updates.description !== undefined) {
+      payload.description = updates.description || null;
+    }
+
+    const { data, error } = await supabase
+      .from('competitions')
+      .update(payload)
+      .eq('id', competitionId)
+      .eq('nutritionist_id', uid) // Só o dono pode editar
+      .select('*, competition_participants(patient_id, joined_at)')
+      .single();
+
+    if (error) throw error;
+    return mapCompetition(data);
+  }
+
   // Visible to current user by RLS (owner or participant)
   async listVisible(): Promise<Competition[]> {
     const { data, error } = await supabase

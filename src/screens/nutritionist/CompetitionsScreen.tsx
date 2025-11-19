@@ -10,13 +10,18 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import { competitionService } from '../../services/CompetitionService';
 import { Competition } from '../../types';
+import { NutritionistCompetitionsStackParamList } from '../../navigation/NutritionistCompetitionsStackNavigator';
 import supabase from '../../lib/supabase';
 
-type CompetitionsScreenNavigationProp = any;
+type CompetitionsScreenNavigationProp = NativeStackNavigationProp<
+  NutritionistCompetitionsStackParamList,
+  'CompetitionsList'
+>;
 
 export default function CompetitionsScreen() {
   const navigation = useNavigation<CompetitionsScreenNavigationProp>();
@@ -118,13 +123,7 @@ export default function CompetitionsScreen() {
           {competition.isActive && (
             <Button
               title="Editar"
-              onPress={() => {
-                Alert.alert(
-                  'Em Desenvolvimento',
-                  'A funcionalidade de edição estará disponível em breve!',
-                  [{ text: 'OK' }]
-                );
-              }}
+              onPress={() => navigation.navigate('EditCompetition', { competitionId: competition.id })}
               variant="outline"
               style={styles.actionButton}
             />
@@ -185,7 +184,7 @@ export default function CompetitionsScreen() {
             </Text>
             <Button
               title="Criar Competição"
-              onPress={() => navigation.navigate('CreateCompetition')}
+              onPress={() => (navigation as any).navigate('CreateCompetition')}
               style={styles.createButton}
             />
           </Card>

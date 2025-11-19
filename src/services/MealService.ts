@@ -61,6 +61,16 @@ export class MealService {
     return (data || []).map(fromDB);
   }
 
+  async getPatientCheckIns(patientId: string): Promise<MealCheckIn[]> {
+    const { data, error } = await supabase
+      .from('meal_check_ins')
+      .select('*')
+      .eq('patient_id', patientId)
+      .order('timestamp', { ascending: false});
+    if (error) throw error;
+    return (data || []).map(fromDB);
+  }
+
   async addCheckIn(input: NewMealCheckIn): Promise<MealCheckIn> {
     const uid = await MealService.getUserId();
 
