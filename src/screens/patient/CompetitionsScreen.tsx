@@ -8,12 +8,21 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import { competitionService } from '../../services/CompetitionService';
 import { Competition } from '../../types';
+import { PatientCompetitionsStackParamList } from '../../navigation/PatientCompetitionsStackNavigator';
+
+type CompetitionsScreenNavigationProp = NativeStackNavigationProp<
+  PatientCompetitionsStackParamList,
+  'CompetitionsList'
+>;
 
 export default function CompetitionsScreen() {
+  const navigation = useNavigation<CompetitionsScreenNavigationProp>();
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -127,7 +136,7 @@ export default function CompetitionsScreen() {
         </Text>
         <Button
           title="Ver Detalhes"
-          onPress={() => {}}
+          onPress={() => navigation.navigate('CompetitionDetails', { competitionId: competition.id })}
           variant="outline"
           style={styles.detailsButton}
         />
