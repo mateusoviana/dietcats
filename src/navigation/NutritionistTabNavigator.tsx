@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import NutritionistPatientsStackNavigator from './NutritionistPatientsStackNavigator';
-import CompetitionsScreen from '../screens/nutritionist/CompetitionsScreen';
+import NutritionistCompetitionsStackNavigator from './NutritionistCompetitionsStackNavigator';
 import CreateCompetitionScreen from '../screens/nutritionist/CreateCompetitionScreen';
 import ProfileScreen from '../screens/nutritionist/ProfileScreen';
 import { NutritionistTabParamList } from '../types';
@@ -40,7 +40,11 @@ export default function NutritionistTabNavigator() {
         component={NutritionistPatientsStackNavigator} 
         options={{ title: 'Pacientes' }} 
       />
-      <Tab.Screen name="Competitions" component={CompetitionsScreen} options={{ title: 'Competições' }} />
+      <Tab.Screen 
+        name="Competitions" 
+        component={NutritionistCompetitionsStackNavigator} 
+        options={{ title: 'Competições' }} 
+      />
       <Tab.Screen name="CreateCompetition" component={CreateCompetitionScreen} options={{ title: 'Criar' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Perfil' }} />
     </Tab.Navigator>

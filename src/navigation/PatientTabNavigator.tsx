@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/patient/HomeScreen';
 import CheckInScreen from '../screens/patient/CheckInScreen';
 import HistoryScreen from '../screens/patient/HistoryScreen';
-import CompetitionsScreen from '../screens/patient/CompetitionsScreen';
+import PatientCompetitionsStackNavigator from './PatientCompetitionsStackNavigator';
 import ProfileScreen from '../screens/patient/ProfileScreen';
 import { PatientTabParamList } from '../types';
 
@@ -41,7 +41,7 @@ export default function PatientTabNavigator() {
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Início' }} />
       <Tab.Screen name="CheckIn" component={CheckInScreen} options={{ title: 'Check-in' }} />
       <Tab.Screen name="History" component={HistoryScreen} options={{ title: 'Histórico' }} />
-      <Tab.Screen name="Competitions" component={CompetitionsScreen} options={{ title: 'Competições' }} />
+      <Tab.Screen name="Competitions" component={PatientCompetitionsStackNavigator} options={{ title: 'Competições' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Perfil' }} />
     </Tab.Navigator>
   );

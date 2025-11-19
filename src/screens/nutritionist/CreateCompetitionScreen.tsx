@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,27 +7,64 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import { competitionService } from '../../services/CompetitionService';
+import { associationService } from '../../services/AssociationService';
+import { NutritionistTabParamList } from '../../types';
+
+type CreateCompetitionScreenNavigationProp = BottomTabNavigationProp<
+  NutritionistTabParamList,
+  'CreateCompetition'
+>;
+
+interface Patient {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export default function CreateCompetitionScreen() {
+  const navigation = useNavigation<CreateCompetitionScreenNavigationProp>();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedPatients, setSelectedPatients] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingPatients, setLoadingPatients] = useState(true);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [patients, setPatients] = useState<Patient[]>([]);
 
-  // Dados mockados de pacientes
-  const patients = [
-    { id: '1', name: 'João Silva' },
-    { id: '2', name: 'Maria Santos' },
-    { id: '3', name: 'Pedro Costa' },
-  ];
+  useEffect(() => {
+    loadMyPatients();
+  }, []);
+
+  const loadMyPatients = async () => {
+    try {
+      setLoadingPatients(true);
+      console.log('🔄 Loading my patients...');
+      
+      const patientsData = await associationService.getMyPatients();
+      
+      console.log('✅ Patients loaded:', patientsData.length);
+      console.log('📋 Patients data:', patientsData);
+      setPatients(patientsData);
+      
+    } catch (error) {
+      console.error('❌ Error in loadMyPatients:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Não foi possível carregar os pacientes';
+      Alert.alert('Erro', errorMessage);
+      setPatients([]);
+    } finally {
+      setLoadingPatients(false);
+    }
+  };
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -65,32 +102,59 @@ export default function CreateCompetitionScreen() {
 
     setLoading(true);
     try {
+      console.log('🚀 Creating competition...');
       const comp = await competitionService.createCompetition({
         name: name.trim(),
         description: description.trim(),
         startDate,
         endDate,
       });
-      // Tentar adicionar participantes (IDs devem existir no Supabase)
+      console.log('✅ Competition created:', comp.id);
+      
+      // Adicionar participantes
+      console.log('👥 Adding participants:', selectedPatients);
+      let successCount = 0;
+      let failCount = 0;
+      
       for (const pid of selectedPatients) {
         try {
           await competitionService.addParticipant(comp.id, pid);
-        } catch {}
+          successCount++;
+          console.log(`✅ Added participant: ${pid}`);
+        } catch (e) {
+          failCount++;
+          console.error(`❌ Failed to add participant ${pid}:`, e);
+        }
       }
-      Alert.alert('Sucesso!', 'Competição criada com sucesso!', [
-        {
-          text: 'OK',
-          onPress: () => {
-            setName('');
-            setDescription('');
-            setStartDate('');
-            setEndDate('');
-            setSelectedPatients([]);
+      
+      console.log(`📊 Participants: ${successCount} added, ${failCount} failed`);
+      
+      Alert.alert(
+        'Sucesso!',
+        `Competição criada com ${successCount} participante(s)!`,
+        [
+          {
+            text: 'Ver Competições',
+            onPress: () => {
+              navigation.navigate('Competitions');
+            },
           },
-        },
-      ]);
+        ]
+      );
+      
+      // Limpar formulário
+      setName('');
+      setDescription('');
+      setStartDate('');
+      setEndDate('');
+      setSelectedPatients([]);
+      
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível criar a competição');
+      console.error('❌ Error creating competition:', error);
+      Alert.alert(
+        'Erro',
+        `Não foi possível criar a competição: ${error instanceof Error ? error.message : String(error)}`
+      );
     } finally {
       setLoading(false);
     }
@@ -169,17 +233,33 @@ export default function CreateCompetitionScreen() {
               <Text style={styles.errorText}>{errors.patients}</Text>
             )}
             
-            <View style={styles.patientsList}>
-              {patients.map(patient => (
-                <Button
-                  key={patient.id}
-                  title={patient.name}
-                  onPress={() => togglePatient(patient.id)}
-                  variant={selectedPatients.includes(patient.id) ? 'primary' : 'outline'}
-                  style={styles.patientButton}
-                />
-              ))}
-            </View>
+            {loadingPatients ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#40916C" />
+                <Text style={styles.loadingText}>Carregando pacientes...</Text>
+              </View>
+            ) : patients.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>
+                  Você ainda não tem pacientes associados.
+                </Text>
+                <Text style={styles.emptySubtext}>
+                  Adicione pacientes na aba "Pacientes" antes de criar uma competição.
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.patientsList}>
+                {patients.map(patient => (
+                  <Button
+                    key={patient.id}
+                    title={patient.name}
+                    onPress={() => togglePatient(patient.id)}
+                    variant={selectedPatients.includes(patient.id) ? 'primary' : 'outline'}
+                    style={styles.patientButton}
+                  />
+                ))}
+              </View>
+            )}
           </View>
 
           <View style={styles.scoringSection}>
@@ -206,6 +286,7 @@ export default function CreateCompetitionScreen() {
             title="Criar Competição"
             onPress={handleCreateCompetition}
             loading={loading}
+            disabled={loadingPatients || patients.length === 0 || loading}
             style={styles.createButton}
           />
         </Card>
@@ -279,6 +360,34 @@ const styles = StyleSheet.create({
     color: '#F44336',
     marginBottom: 8,
   },
+  loadingContainer: {
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  emptyContainer: {
+    padding: 24,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
   patientsList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -335,7 +444,7 @@ const styles = StyleSheet.create({
   tipsTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#40916C',
     marginBottom: 12,
   },
   tipText: {

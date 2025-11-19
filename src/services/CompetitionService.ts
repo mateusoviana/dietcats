@@ -26,6 +26,8 @@ function mapCompetition(row: CompetitionRow): Competition {
     participants,
     scoringCriteria: scoring || { checkInPoints: 10, consistencyBonus: 0, ratingBonus: 5 },
     createdAt: row.created_at,
+    updatedAt: row.updated_at ?? undefined,
+    allowSelfJoin: row.allow_self_join ?? false,
     isActive,
   } as Competition;
 }
@@ -47,6 +49,7 @@ export type CreateCompetitionInput = {
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   scoringCriteria?: ScoringCriteria;
+  allowSelfJoin?: boolean;
 };
 
 export class CompetitionService {
@@ -62,6 +65,7 @@ export class CompetitionService {
       start_date: input.startDate,
       end_date: input.endDate,
       scoring_criteria: input.scoringCriteria ?? null,
+      allow_self_join: input.allowSelfJoin ?? false,
     };
 
     const { data, error } = await supabase
@@ -73,11 +77,42 @@ export class CompetitionService {
     return mapCompetition(data);
   }
 
+  async updateCompetition(
+    competitionId: string,
+    updates: { name?: string; description?: string }
+  ): Promise<Competition> {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const uid = sessionData.session?.user?.id;
+    if (!uid) throw new Error('Não autenticado');
+
+    const payload: any = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (updates.name !== undefined) {
+      payload.name = updates.name;
+    }
+    if (updates.description !== undefined) {
+      payload.description = updates.description || null;
+    }
+
+    const { data, error } = await supabase
+      .from('competitions')
+      .update(payload)
+      .eq('id', competitionId)
+      .eq('nutritionist_id', uid) // Só o dono pode editar
+      .select('*, competition_participants(patient_id, joined_at)')
+      .single();
+
+    if (error) throw error;
+    return mapCompetition(data);
+  }
+
   // Visible to current user by RLS (owner or participant)
   async listVisible(): Promise<Competition[]> {
     const { data, error } = await supabase
       .from('competitions')
-      .select('*, competition_participants(patient_id)')
+      .select('*, competition_participants(patient_id, joined_at)')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return (data || []).map(mapCompetition);
@@ -94,7 +129,7 @@ export class CompetitionService {
     
     const { data, error } = await supabase
       .from('competitions')
-      .select('*, competition_participants(patient_id)')
+      .select('*, competition_participants(patient_id, joined_at)')
       .eq('nutritionist_id', uid)
       .order('created_at', { ascending: false });
     
@@ -201,7 +236,7 @@ export class CompetitionService {
   async getCompetitionWithScores(competitionId: string): Promise<Competition | null> {
     const { data, error } = await supabase
       .from('competitions')
-      .select('*, competition_participants(patient_id)')
+      .select('*, competition_participants(patient_id, joined_at)')
       .eq('id', competitionId)
       .maybeSingle();
     

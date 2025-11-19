@@ -150,29 +150,33 @@ export default function PatientDashboardScreen({ route }: PatientDashboardProps)
       >
         {/* Cards de Estatísticas */}
         <View style={styles.statsContainer}>
-          <Card style={styles.statCard}>
-            <Ionicons name="restaurant" size={32} color="#4CAF50" />
-            <Text style={styles.statNumber}>{totalCheckIns}</Text>
-            <Text style={styles.statLabel}>Check-ins</Text>
-          </Card>
+          <View style={styles.statsRow}>
+            <Card style={styles.statCard}>
+              <Ionicons name="restaurant" size={32} color="#40916C" />
+              <Text style={styles.statNumber}>{totalCheckIns}</Text>
+              <Text style={styles.statLabel}>Check-ins</Text>
+            </Card>
 
-          <Card style={styles.statCard}>
-            <Ionicons name="star" size={32} color="#FFD700" />
-            <Text style={styles.statNumber}>{totalStars}</Text>
-            <Text style={styles.statLabel}>Estrelas</Text>
-          </Card>
+            <Card style={styles.statCard}>
+              <Ionicons name="star" size={32} color="#FFD700" />
+              <Text style={styles.statNumber}>{totalStars}</Text>
+              <Text style={styles.statLabel}>Estrelas</Text>
+            </Card>
+          </View>
 
-          <Card style={styles.statCard}>
-            <Ionicons name="trending-up" size={32} color="#2196F3" />
-            <Text style={styles.statNumber}>{averageStars.toFixed(1)}</Text>
-            <Text style={styles.statLabel}>Média</Text>
-          </Card>
+          <View style={styles.statsRow}>
+            <Card style={styles.statCard}>
+              <Ionicons name="trending-up" size={32} color="#2196F3" />
+              <Text style={styles.statNumber}>{averageStars.toFixed(1)}</Text>
+              <Text style={styles.statLabel}>Média</Text>
+            </Card>
 
-          <Card style={styles.statCard}>
-            <Ionicons name="calendar" size={32} color="#FF9800" />
-            <Text style={styles.statNumber}>{last7Days}</Text>
-            <Text style={styles.statLabel}>7 dias</Text>
-          </Card>
+            <Card style={styles.statCard}>
+              <Ionicons name="calendar" size={32} color="#FF9800" />
+              <Text style={styles.statNumber}>{last7Days}</Text>
+              <Text style={styles.statLabel}>7 dias</Text>
+            </Card>
+          </View>
         </View>
 
         {/* Histórico de Check-ins */}
@@ -191,7 +195,7 @@ export default function PatientDashboardScreen({ route }: PatientDashboardProps)
                   <Ionicons
                     name={getMealIcon(checkIn.mealType)}
                     size={24}
-                    color="#4CAF50"
+                    color="#40916C"
                   />
                 </View>
                 <View style={styles.checkInInfo}>
@@ -226,7 +230,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#40916C',
   },
   title: {
     fontSize: 24,
@@ -236,22 +240,26 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#E8F5E8',
+    color: '#D8F3DC',
   },
   scrollView: {
     flex: 1,
   },
   statsContainer: {
+    padding: 16,
+  },
+  statsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 12,
     justifyContent: 'space-between',
+    marginBottom: 16,
   },
   statCard: {
-    width: (Dimensions.get('window').width - 48) / 2,
-    marginBottom: 16,
+    flex: 1,
+    marginHorizontal: 6,
     alignItems: 'center',
     paddingVertical: 20,
+    minHeight: 140,
+    justifyContent: 'center',
   },
   statNumber: {
     fontSize: 32,
@@ -285,7 +293,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#E8F5E8',
+    backgroundColor: '#D8F3DC',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
