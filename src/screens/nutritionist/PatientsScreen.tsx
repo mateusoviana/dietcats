@@ -7,6 +7,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -157,6 +158,68 @@ export default function PatientsScreen() {
     return '#F44336';
   };
 
+  const handleRemovePatient = (patient: Patient) => {
+    console.log('🗑️ [PatientsScreen] Remove button clicked for:', patient.name);
+    
+    const removePatient = async () => {
+      try {
+        console.log('🗑️ [PatientsScreen] Removing patient:', patient.id);
+        
+        // Remover associação
+        const { error } = await supabase
+          .from('profiles')
+          .update({ nutritionist_id: null })
+          .eq('id', patient.id);
+
+        if (error) {
+          console.error('❌ [PatientsScreen] Error removing patient:', error);
+          throw error;
+        }
+
+        console.log('✅ [PatientsScreen] Patient removed successfully');
+        
+        if (Platform.OS === 'web') {
+          window.alert('Paciente removido com sucesso!');
+        } else {
+          Alert.alert('Sucesso', 'Paciente removido');
+        }
+        
+        loadData();
+      } catch (error) {
+        console.error('❌ [PatientsScreen] Error removing patient:', error);
+        
+        if (Platform.OS === 'web') {
+          window.alert('Erro: Não foi possível remover o paciente');
+        } else {
+          Alert.alert('Erro', 'Não foi possível remover o paciente');
+        }
+      }
+    };
+
+    // Confirmar remoção
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        `Deseja remover ${patient.name} da sua lista?`
+      );
+      if (confirmed) {
+        removePatient();
+      }
+    } else {
+      Alert.alert(
+        'Remover Paciente',
+        `Deseja remover ${patient.name} da sua lista?`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Remover',
+            style: 'destructive',
+            onPress: removePatient,
+          },
+        ]
+      );
+    }
+  };
+
   const generateAssociationCode = async () => {
     setIsGeneratingCode(true);
     try {
@@ -222,35 +285,7 @@ export default function PatientsScreen() {
         />
         <Button
           title="Remover"
-          onPress={() => {
-            Alert.alert(
-              'Remover Paciente',
-              `Deseja remover ${patient.name} da sua lista?`,
-              [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                  text: 'Remover',
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      // Remover associação
-                      const { error } = await supabase
-                        .from('profiles')
-                        .update({ nutritionist_id: null })
-                        .eq('id', patient.id);
-
-                      if (error) throw error;
-
-                      Alert.alert('Sucesso', 'Paciente removido');
-                      loadData();
-                    } catch (error) {
-                      Alert.alert('Erro', 'Não foi possível remover o paciente');
-                    }
-                  },
-                },
-              ]
-            );
-          }}
+          onPress={() => handleRemovePatient(patient)}
           variant="outline"
           style={styles.actionButton}
         />
