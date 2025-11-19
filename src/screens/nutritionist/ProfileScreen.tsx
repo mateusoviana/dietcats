@@ -9,14 +9,26 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { CompositeNavigationProp } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../../contexts/AuthContext';
 import { accountService } from '../../services/AccountService';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
+import { NutritionistTabParamList } from '../../types';
+import { NutritionistProfileStackParamList } from '../../navigation/NutritionistProfileStackNavigator';
+
+type ProfileScreenNavigationProp = CompositeNavigationProp<
+  NativeStackNavigationProp<NutritionistProfileStackParamList, 'ProfileMain'>,
+  BottomTabNavigationProp<NutritionistTabParamList>
+>;
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
+  const navigation = useNavigation<ProfileScreenNavigationProp>();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -99,38 +111,20 @@ export default function ProfileScreen() {
       icon: 'people-outline',
       title: 'Meus Pacientes',
       subtitle: 'Gerenciar pacientes associados',
-      onPress: () => {},
+      onPress: () => navigation.navigate('Patients'),
     },
     {
       icon: 'trophy-outline',
       title: 'Minhas Competições',
       subtitle: 'Ver e editar competições',
-      onPress: () => {},
+      onPress: () => navigation.navigate('Competitions'),
     },
     {
       icon: 'analytics-outline',
       title: 'Relatórios',
       subtitle: 'Análises e estatísticas',
-      onPress: () => {},
-    },
-    {
-      icon: 'notifications-outline',
-      title: 'Notificações',
-      subtitle: 'Configurar alertas',
-      onPress: () => {},
-    },
-    {
-      icon: 'help-circle-outline',
-      title: 'Ajuda e Suporte',
-      subtitle: 'Central de ajuda',
-      onPress: () => {},
-    },
-    {
-      icon: 'information-circle-outline',
-      title: 'Sobre o App',
-      subtitle: 'Versão 1.0.0',
-      onPress: () => {},
-    },
+      onPress: () => navigation.navigate('Reports'),
+    }
   ];
 
   return (

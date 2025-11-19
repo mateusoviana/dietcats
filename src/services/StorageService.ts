@@ -4,6 +4,7 @@ import { decode } from 'base64-arraybuffer';
 import { Platform } from 'react-native';
 
 export class StorageService {
+  private static BUCKET_NAME = 'meal-photos';
   private static AVATAR_BUCKET_NAME = 'avatars';
 
   /**
@@ -73,7 +74,7 @@ export class StorageService {
         fileExt = uri.split('.').pop() || 'jpg';
         contentType = `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`;
         const base64 = await FileSystem.readAsStringAsync(uri, {
-          encoding: FileSystem.EncodingType.Base64,
+          encoding: 'base64' as any,
         });
         arrayBuffer = decode(base64);
       }
@@ -102,6 +103,13 @@ export class StorageService {
     }
   }
 
+
+  /**
+   * Deletes a meal photo from storage
+   */
+  static async deletePhoto(fileUrl: string): Promise<void> {
+    return this.deleteFile(fileUrl);
+  }
 
   /**
    * Deletes a file from a specific storage bucket
